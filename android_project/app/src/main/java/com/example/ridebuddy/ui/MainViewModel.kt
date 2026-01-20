@@ -7,9 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.ridebuddy.data.LocationRepository
 import com.example.ridebuddy.data.User
 import com.example.ridebuddy.service.LocationService
+import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -22,7 +24,16 @@ class MainViewModel @Inject constructor(
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
 
-    val activeFriends: StateFlow<List<User>> = repository.getActiveFriends()
+    val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveFriends()
+        .map { users ->
+            users.map { user ->
+                UserUiModel(
+                    userId = user.userId,
+                    position = LatLng(user.latitude, user.longitude),
+                    lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}"
+                )
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun startSharing(durationHours: Int, intervalMinutes: Int) {
