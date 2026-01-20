@@ -42,12 +42,10 @@ class LocationRepository @Inject constructor(
     fun getActiveFriends(): Flow<List<User>> {
         return firestore.collection("users")
             .whereEqualTo("isSharing", true)
+            .whereGreaterThan("sharingExpiry", System.currentTimeMillis())
             .snapshots()
             .map { snapshot ->
-                val currentTime = System.currentTimeMillis()
-                snapshot.toObjects(User::class.java).filter {
-                    it.sharingExpiry > currentTime
-                }
+                snapshot.toObjects(User::class.java)
             }
     }
 }
