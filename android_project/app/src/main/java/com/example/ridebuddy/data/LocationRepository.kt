@@ -2,7 +2,9 @@ package com.example.ridebuddy.data
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -47,5 +49,6 @@ class LocationRepository @Inject constructor(
             .map { snapshot ->
                 snapshot.toObjects(User::class.java)
             }
+            .flowOn(Dispatchers.Default)
     }
 }
