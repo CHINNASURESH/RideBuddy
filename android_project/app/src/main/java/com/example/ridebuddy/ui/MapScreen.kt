@@ -68,9 +68,9 @@ fun MapScreen(
         ) {
             friends.forEach { user ->
                 Marker(
-                    state = MarkerState(position = LatLng(user.latitude, user.longitude)),
+                    state = MarkerState(position = user.position),
                     title = user.userId,
-                    snippet = "Last seen: ${user.lastUpdated?.toDate()}"
+                    snippet = user.lastSeenText
                 )
             }
         }
