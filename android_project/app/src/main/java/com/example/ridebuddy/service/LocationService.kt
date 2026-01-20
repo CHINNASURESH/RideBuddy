@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
+import android.location.Location
 import com.example.ridebuddy.data.LocationRepository
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,6 +32,7 @@ class LocationService : Service() {
 
     private var userId: String? = null
     private var sharingExpiry: Long = 0L
+    private var lastUploadedLocation: Location? = null
 
     companion object {
         const val CHANNEL_ID = "location_service_channel"
@@ -106,15 +108,22 @@ class LocationService : Service() {
                         return
                     }
 
-                    userId?.let { uid ->
-                        serviceScope.launch {
-                            repository.updateUserLocation(
-                                uid,
-                                location.latitude,
-                                location.longitude,
-                                true,
-                                sharingExpiry
-                            )
+                    val shouldUpdate = lastUploadedLocation?.let {
+                        location.distanceTo(it) >= 10f
+                    } ?: true
+
+                    if (shouldUpdate) {
+                        lastUploadedLocation = location
+                        userId?.let { uid ->
+                            serviceScope.launch {
+                                repository.updateUserLocation(
+                                    uid,
+                                    location.latitude,
+                                    location.longitude,
+                                    true,
+                                    sharingExpiry
+                                )
+                            }
                         }
                     }
                 }
