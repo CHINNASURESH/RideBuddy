@@ -1,14 +1,5 @@
 # Local properties
 local.properties
-
-# Gradle
 .gradle/
 build/
-app/build/
-
-# Android Studio
-.idea/
-*.iml
-captures/
-.externalNativeBuild/
-.cxx/
+*/build/
