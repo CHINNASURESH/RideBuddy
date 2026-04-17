@@ -40,6 +40,7 @@ class LocationServiceTest {
                 lastUploadedLocation = location
                 mockScope.launch {
                     repository.updateUserLocation(
+                        "default_group",
                         userId,
                         location.latitude,
                         location.longitude,
@@ -60,7 +61,7 @@ class LocationServiceTest {
 
         // Verify update called
         runBlocking {
-            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.eq(userId), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.any(), org.mockito.kotlin.any())
+            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.eq("default_group"), org.mockito.kotlin.eq(userId), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
 
         // 2. Second location, very close (2 meters)
@@ -73,7 +74,7 @@ class LocationServiceTest {
 
         // Verify update NOT called again (still 1)
         runBlocking {
-            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
+            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
 
         // 3. Third location, far enough (15 meters)
@@ -86,7 +87,7 @@ class LocationServiceTest {
 
         // Verify update called again (total 2)
         runBlocking {
-            verify(repository, times(2)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
+            verify(repository, times(2)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
     }
 }
