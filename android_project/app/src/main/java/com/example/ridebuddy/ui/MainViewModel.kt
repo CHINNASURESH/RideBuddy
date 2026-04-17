@@ -8,7 +8,7 @@ import com.example.ridebuddy.data.AuthRepository
 import com.example.ridebuddy.data.LocationRepository
 import com.example.ridebuddy.data.User
 import com.example.ridebuddy.service.LocationService
-import com.google.android.gms.maps.model.LatLng
+import org.mapsforge.core.model.LatLong
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +27,12 @@ class MainViewModel @Inject constructor(
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
 
-    val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveFriends()
+    val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveGroupRiders("default_group")
         .map { users ->
             users.map { user ->
                 UserUiModel(
                     userId = user.userId,
-                    position = LatLng(user.latitude, user.longitude),
+                    position = LatLong(user.latitude, user.longitude),
                     lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}"
                 )
             }
@@ -50,10 +50,11 @@ class MainViewModel @Inject constructor(
                 val intent = Intent(application, LocationService::class.java).apply {
                     action = LocationService.ACTION_START
                     putExtra(LocationService.EXTRA_USER_ID, currentUserId)
+                    putExtra(LocationService.EXTRA_GROUP_ID, "default_group")
                     putExtra(LocationService.EXTRA_EXPIRY, expiry)
                     putExtra(LocationService.EXTRA_INTERVAL, intervalMillis)
                 }
-                application.startForegroundService(intent)
+                androidx.core.content.ContextCompat.startForegroundService(application, intent)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

@@ -16,6 +16,7 @@ class LocationRepository @Inject constructor(
 ) {
     // Update current user's location and status
     suspend fun updateUserLocation(
+        groupId: String,
         userId: String,
         lat: Double,
         lng: Double,
@@ -31,18 +32,18 @@ class LocationRepository @Inject constructor(
             "sharingExpiry" to expiry
         )
         // Using merge to avoid overwriting other fields if we add them later
-        firestore.collection("users").document(userId).set(userMap).await()
+        firestore.collection("groups").document(groupId).collection("riders").document(userId).set(userMap).await()
     }
 
-    suspend fun updateSharingStatus(userId: String, isSharing: Boolean) {
-         firestore.collection("users").document(userId)
+    suspend fun updateSharingStatus(groupId: String, userId: String, isSharing: Boolean) {
+         firestore.collection("groups").document(groupId).collection("riders").document(userId)
             .update("isSharing", isSharing)
             .await()
     }
 
     // Fetch friends who are sharing and not expired
-    fun getActiveFriends(): Flow<List<User>> {
-        return firestore.collection("users")
+    fun getActiveGroupRiders(groupId: String): Flow<List<User>> {
+        return firestore.collection("groups").document(groupId).collection("riders")
             .whereEqualTo("isSharing", true)
             .whereGreaterThan("sharingExpiry", System.currentTimeMillis())
             .snapshots()

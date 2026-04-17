@@ -31,6 +31,7 @@ class LocationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var userId: String? = null
+    private var groupId: String? = null
     private var sharingExpiry: Long = 0L
     private var lastUploadedLocation: Location? = null
 
@@ -42,6 +43,7 @@ class LocationService : Service() {
 
         const val EXTRA_INTERVAL = "EXTRA_INTERVAL"
         const val EXTRA_USER_ID = "EXTRA_USER_ID"
+        const val EXTRA_GROUP_ID = "EXTRA_GROUP_ID"
         const val EXTRA_EXPIRY = "EXTRA_EXPIRY"
     }
 
@@ -55,6 +57,7 @@ class LocationService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 userId = intent.getStringExtra(EXTRA_USER_ID)
+                groupId = intent.getStringExtra(EXTRA_GROUP_ID)
                 sharingExpiry = intent.getLongExtra(EXTRA_EXPIRY, 0L)
                 val interval = intent.getLongExtra(EXTRA_INTERVAL, 10000L) // Default 10s
                 startForegroundService()
@@ -115,14 +118,17 @@ class LocationService : Service() {
                     if (shouldUpdate) {
                         lastUploadedLocation = location
                         userId?.let { uid ->
-                            serviceScope.launch {
-                                repository.updateUserLocation(
-                                    uid,
-                                    location.latitude,
-                                    location.longitude,
-                                    true,
-                                    sharingExpiry
-                                )
+                            groupId?.let { gid ->
+                                serviceScope.launch {
+                                    repository.updateUserLocation(
+                                        gid,
+                                        uid,
+                                        location.latitude,
+                                        location.longitude,
+                                        true,
+                                        sharingExpiry
+                                    )
+                                }
                             }
                         }
                     }
@@ -143,11 +149,19 @@ class LocationService : Service() {
 
     private fun stopService() {
         userId?.let { uid ->
-            serviceScope.launch {
-                repository.updateSharingStatus(uid, false)
+            groupId?.let { gid ->
+                serviceScope.launch {
+                    repository.updateSharingStatus(gid, uid, false)
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+            } ?: run {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
+        } ?: run {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
         }
     }
 
@@ -162,12 +176,14 @@ class LocationService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Location Service",
-            NotificationManager.IMPORTANCE_LOW
-        )
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Location Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
     }
 }

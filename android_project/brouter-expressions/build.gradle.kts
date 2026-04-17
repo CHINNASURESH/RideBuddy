@@ -9,4 +9,5 @@ java {
 
 dependencies {
     implementation(project(":brouter-util"))
+    implementation(project(":brouter-codec"))
 }

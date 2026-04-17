@@ -15,27 +15,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ridebuddy.data.User
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import org.mapsforge.map.android.view.MapView
+import androidx.compose.ui.viewinterop.AndroidView
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.example.ridebuddy.data.offline.OfflineStorageManager
+import org.mapsforge.core.graphics.Color
+import org.mapsforge.core.model.LatLong
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    offlineStorageManager: OfflineStorageManager? = null
 ) {
     val friends by viewModel.activeFriends.collectAsState()
     val context = LocalContext.current
-
-    // Default camera position (e.g., London)
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(51.505, -0.09), 10f)
-    }
 
     // Permissions
     val permissions = mutableListOf(
@@ -54,6 +49,8 @@ fun MapScreen(
     var selectedFrequency by remember { mutableStateOf(10) } // Minutes (0 = Live)
     var isSharing by remember { mutableStateOf(false) }
 
+    val ridersOverlay = remember { RidersOverlay() }
+
     // Request permissions on launch
     LaunchedEffect(Unit) {
         if (!permissionsState.allPermissionsGranted) {
@@ -61,19 +58,30 @@ fun MapScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
-        ) {
-            friends.forEach { user ->
-                Marker(
-                    state = MarkerState(position = user.position),
-                    title = user.userId,
-                    snippet = user.lastSeenText
-                )
-            }
+    LaunchedEffect(friends) {
+        val newRiders = friends.map { user ->
+            Rider(user.userId, user.position, android.graphics.Color.RED) // Using Red for group riders
         }
+        ridersOverlay.setRiders(newRiders)
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                MapView(ctx).apply {
+                    val mapManager = MapsforgeMapManager(ctx, this)
+                    if (offlineStorageManager != null) {
+                        val mapFile = offlineStorageManager.getOfflineFile("germany.map")
+                        mapManager.loadMapFile(mapFile)
+                    }
+                    this.layerManager.layers.add(ridersOverlay)
+                }
+            },
+            update = { mapView ->
+                // MapView updates handled by LaunchedEffect on ridersOverlay
+            }
+        )
 
         // Control Panel
         Surface(

@@ -1,7 +1,7 @@
 package com.example.ridebuddy.routing
 
 import android.content.Context
-import com.google.android.gms.maps.model.LatLng
+import org.mapsforge.core.model.LatLong
 import btools.router.RoutingContext
 import btools.router.RoutingEngine
 import btools.router.OsmNodeNamed
@@ -11,7 +11,7 @@ import java.util.ArrayList
 
 class LocalBRouterEngine(private val context: Context, private val brouterDir: File) : OfflineRoutingEngine {
 
-    override fun calculateRoute(start: LatLng, destination: LatLng): List<LatLng> {
+    override suspend fun calculateRoute(start: LatLong, destination: LatLong): List<LatLong> {
         val rc = RoutingContext()
 
         val segmentsDir = File(brouterDir, "segments4")
@@ -48,12 +48,12 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
 
         val track = engine.foundTrack
         if (track != null && track.nodes != null) {
-            val result = mutableListOf<LatLng>()
+            val result = mutableListOf<LatLong>()
             for (node in track.nodes) {
                 // Revert shift and 1E6 multiplication
                 val lat = (node.getILat() / 1000000.0) - 90.0
                 val lng = (node.getILon() / 1000000.0) - 180.0
-                result.add(LatLng(lat, lng))
+                result.add(LatLong(lat, lng))
             }
             return result
         }

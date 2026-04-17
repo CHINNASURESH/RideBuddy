@@ -1,9 +1,9 @@
 package com.example.ridebuddy.ui
 
-import com.google.android.gms.maps.model.LatLng
+import org.mapsforge.core.model.LatLong
 
 data class UserUiModel(
     val userId: String,
-    val position: LatLng,
+    val position: LatLong,
     val lastSeenText: String
 )

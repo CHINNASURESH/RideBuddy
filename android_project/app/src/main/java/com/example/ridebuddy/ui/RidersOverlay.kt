@@ -37,6 +37,14 @@ class RidersOverlay : Layer() {
         requestRedraw()
     }
 
+    fun setRiders(newRiders: List<Rider>) {
+        riders.clear()
+        for (rider in newRiders) {
+            riders[rider.id] = rider
+        }
+        requestRedraw()
+    }
+
     override fun draw(boundingBox: BoundingBox, zoomLevel: Byte, canvas: Canvas, topLeftPoint: Point) {
         val tileSize = 256
         val mapSize = org.mapsforge.core.util.MercatorProjection.getMapSize(zoomLevel, tileSize)
