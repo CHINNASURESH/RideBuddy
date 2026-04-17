@@ -1,7 +1,7 @@
 package com.example.ridebuddy.routing
 
-import com.google.android.gms.maps.model.LatLng
+import org.mapsforge.core.model.LatLong
 
 interface OfflineRoutingEngine {
-    fun calculateRoute(start: LatLng, destination: LatLng): List<LatLng>
+    suspend fun calculateRoute(start: LatLong, destination: LatLong): List<LatLong>
 }
