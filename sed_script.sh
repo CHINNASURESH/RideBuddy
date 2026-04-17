@@ -1,0 +1,1 @@
+sed -i 's/dependencies {/dependencies {\n    implementation(project(":brouter-core"))\n    implementation(project(":brouter-codec"))\n    implementation(project(":brouter-util"))/' android_project/app/build.gradle.kts

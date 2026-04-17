@@ -21,3 +21,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "RideBuddy"
 include(":app")
+include(":brouter-core")
+include(":brouter-codec")
+include(":brouter-util")
+include(":brouter-mapaccess")
+include(":brouter-expressions")

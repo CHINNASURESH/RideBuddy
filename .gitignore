@@ -1,0 +1,9 @@
+android_project/app/build/
+android_project/build/
+android_project/.gradle/
+android_project/brouter-core/build/
+android_project/brouter-codec/build/
+android_project/brouter-util/build/
+android_project/brouter-mapaccess/build/
+android_project/brouter-expressions/build/
+build/

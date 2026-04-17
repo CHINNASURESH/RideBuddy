@@ -3,3 +3,6 @@ local.properties
 .gradle/
 build/
 */build/
+build/
+*/build/
+.gradle/
