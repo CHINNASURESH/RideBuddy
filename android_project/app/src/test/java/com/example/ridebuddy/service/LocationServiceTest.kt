@@ -32,8 +32,9 @@ class LocationServiceTest {
 
         // Helper function simulating the logic to be tested
         fun onLocationResult(location: Location) {
-            val shouldUpdate = lastUploadedLocation == null ||
-                               location.distanceTo(lastUploadedLocation) >= minDistanceMeters
+            val uploaded = lastUploadedLocation
+            val shouldUpdate = uploaded == null ||
+                               location.distanceTo(uploaded) >= minDistanceMeters
 
             if (shouldUpdate) {
                 lastUploadedLocation = location
@@ -59,7 +60,7 @@ class LocationServiceTest {
 
         // Verify update called
         runBlocking {
-            verify(repository, times(1)).updateUserLocation(eq(userId), eq(10.0), eq(10.0), anyBoolean(), anyLong())
+            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.eq(userId), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.eq(10.0), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
 
         // 2. Second location, very close (2 meters)
@@ -72,7 +73,7 @@ class LocationServiceTest {
 
         // Verify update NOT called again (still 1)
         runBlocking {
-            verify(repository, times(1)).updateUserLocation(anyString(), anyDouble(), anyDouble(), anyBoolean(), anyLong())
+            verify(repository, times(1)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
 
         // 3. Third location, far enough (15 meters)
@@ -85,7 +86,7 @@ class LocationServiceTest {
 
         // Verify update called again (total 2)
         runBlocking {
-            verify(repository, times(2)).updateUserLocation(anyString(), anyDouble(), anyDouble(), anyBoolean(), anyLong())
+            verify(repository, times(2)).updateUserLocation(org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any(), org.mockito.kotlin.any())
         }
     }
 }
