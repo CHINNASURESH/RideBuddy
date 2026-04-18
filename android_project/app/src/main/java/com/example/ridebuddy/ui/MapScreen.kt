@@ -43,6 +43,7 @@ fun MapScreen(
     val heading by compassManager.heading.collectAsState()
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
+    val isOnline by viewModel.isOnline.collectAsState()
 
     // Announce new turns
     LaunchedEffect(routingState.currentInstructionIndex) {
@@ -117,12 +118,30 @@ fun MapScreen(
             }
         )
 
+        // Network Status Overlay
+        if (!isOnline) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ) {
+                Text(
+                    text = "No Connection - Offline Mode",
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+
         // Turn By Turn Overlay
         if (routingState.isRoutingActive && routingState.currentInstruction != null) {
             TurnByTurnOverlay(
                 currentInstruction = routingState.currentInstruction,
                 distanceToNext = routingState.distanceToNextInstruction,
-                modifier = Modifier.align(Alignment.TopCenter)
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = if (!isOnline) 32.dp else 0.dp)
             )
         }
 

@@ -19,14 +19,18 @@ import javax.inject.Inject
 import com.example.ridebuddy.routing.RoutingStateManager
 import com.example.ridebuddy.routing.RoutingState
 import com.example.ridebuddy.routing.TtsHelper
+import com.example.ridebuddy.network.NetworkMonitor
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     val routingStateManager: RoutingStateManager,
     private val repository: LocationRepository,
     private val authRepository: AuthRepository,
-    private val application: Application
+    private val application: Application,
+    networkMonitor: NetworkMonitor
 ) : ViewModel() {
+
+    val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
 
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
