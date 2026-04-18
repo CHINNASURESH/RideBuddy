@@ -11,8 +11,9 @@ import java.util.ArrayList
 
 class LocalBRouterEngine(private val context: Context, private val brouterDir: File) : OfflineRoutingEngine {
 
-    override suspend fun calculateRoute(start: LatLong, destination: LatLong): List<LatLong> {
+    override suspend fun calculateRoute(start: LatLong, destination: LatLong): RoutingResult {
         val rc = RoutingContext()
+        rc.turnInstructionMode = 3 // osmand style
 
         val segmentsDir = File(brouterDir, "segments4")
         if (!segmentsDir.exists()) {
@@ -43,7 +44,7 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
 
         if (engine.errorMessage != null) {
             println("BRouter error: " + engine.errorMessage)
-            return emptyList()
+            return RoutingResult(emptyList(), emptyList())
         }
 
         val track = engine.foundTrack
@@ -55,9 +56,24 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
                 val lng = (node.getILon() / 1000000.0) - 180.0
                 result.add(LatLong(lat, lng))
             }
-            return result
+            val instructions = mutableListOf<TurnInstruction>()
+            if (track.voiceHints != null && track.voiceHints.list != null) {
+                for (hint in track.voiceHints.list) {
+                    val idx = hint.indexInTrack
+                    if (idx >= 0 && idx < result.size) {
+                        instructions.add(TurnInstruction(
+                            coordinate = result[idx],
+                            command = hint.cmd,
+                            message = hint.getMessageString(rc.turnInstructionMode),
+                            distanceToNext = hint.distanceToNext,
+                            indexInTrack = hint.indexInTrack
+                        ))
+                    }
+                }
+            }
+            return RoutingResult(result, instructions)
         }
 
-        return emptyList()
+        return RoutingResult(emptyList(), emptyList())
     }
 }

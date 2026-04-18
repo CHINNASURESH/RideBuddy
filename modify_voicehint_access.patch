@@ -1,0 +1,13 @@
+--- android_project/brouter-core/src/main/java/btools/router/VoiceHint.java
++++ android_project/brouter-core/src/main/java/btools/router/VoiceHint.java
+@@ -38,8 +38,8 @@
+   MessageData oldWay;
+   MessageData goodWay;
+   List<MessageData> badWays;
+-  double distanceToNext;
+-  int indexInTrack;
++  public double distanceToNext;
++  public int indexInTrack;
+
+   public float getTime() {
+     return oldWay == null ? 0.f : oldWay.time;

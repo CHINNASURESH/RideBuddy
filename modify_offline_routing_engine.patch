@@ -1,0 +1,9 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/routing/OfflineRoutingEngine.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/routing/OfflineRoutingEngine.kt
+@@ -3,5 +3,5 @@
+ import org.mapsforge.core.model.LatLong
+
+ interface OfflineRoutingEngine {
+-    suspend fun calculateRoute(start: LatLong, destination: LatLong): List<LatLong>
++    suspend fun calculateRoute(start: LatLong, destination: LatLong): RoutingResult
+ }
