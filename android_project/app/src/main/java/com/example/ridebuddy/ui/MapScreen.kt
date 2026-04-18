@@ -20,6 +20,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.example.ridebuddy.data.offline.OfflineStorageManager
+import com.example.ridebuddy.routing.RoutingState
 import org.mapsforge.core.graphics.Color
 import org.mapsforge.core.model.LatLong
 
@@ -34,6 +35,17 @@ fun MapScreen(
 
     val compassManager = remember { CompassManager(context) }
     val heading by compassManager.heading.collectAsState()
+
+    val routingState by viewModel.routingStateManager.routingState.collectAsState()
+
+    // Announce new turns
+    LaunchedEffect(routingState.currentInstructionIndex) {
+        val instruction = routingState.currentInstruction
+        if (instruction != null) {
+            viewModel.speakTurnInstruction(instruction.message)
+        }
+    }
+
 
     // Permissions
     val permissions = mutableListOf(
@@ -96,6 +108,15 @@ fun MapScreen(
                 // We fallback to Plan B: map remains North-Up, and we rotate the puck (rider overlay).
             }
         )
+
+        // Turn By Turn Overlay
+        if (routingState.isRoutingActive && routingState.currentInstruction != null) {
+            TurnByTurnOverlay(
+                currentInstruction = routingState.currentInstruction,
+                distanceToNext = routingState.distanceToNextInstruction,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
 
         // Control Panel
         Surface(
