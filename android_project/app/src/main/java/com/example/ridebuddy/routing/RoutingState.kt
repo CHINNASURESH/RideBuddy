@@ -8,8 +8,17 @@ data class RoutingState(
     val turnInstructions: List<TurnInstruction> = emptyList(),
     val currentInstructionIndex: Int = 0,
     val distanceToNextInstruction: Double = 0.0,
-    val isRoutingActive: Boolean = false
+    val isRoutingActive: Boolean = false,
+    val expectedArrivalTime: Long? = null,
+    val destinationSunsetTime: Long? = null
 ) {
     val currentInstruction: TurnInstruction?
         get() = turnInstructions.getOrNull(currentInstructionIndex)
+
+    val isNightRidingAnticipated: Boolean
+        get() = if (expectedArrivalTime != null && destinationSunsetTime != null) {
+            expectedArrivalTime > destinationSunsetTime
+        } else {
+            false
+        }
 }

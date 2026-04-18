@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.mapsforge.core.model.LatLong
+import com.example.ridebuddy.util.SolarMath
 
 class RoutingStateManager {
     private val _routingState = MutableStateFlow(RoutingState())
@@ -35,6 +36,14 @@ class RoutingStateManager {
     }
 
     fun startRouting(result: RoutingResult) {
+        val expectedArrival = System.currentTimeMillis() + (result.totalSeconds * 1000L)
+        val sunsetTime = if (result.path.isNotEmpty()) {
+            val destination = result.path.last()
+            SolarMath.calculateSunset(destination.latitude, destination.longitude)
+        } else {
+            null
+        }
+
         _routingState.value = _routingState.value.copy(
             routePath = result.path,
             turnInstructions = result.instructions,
@@ -45,7 +54,9 @@ class RoutingStateManager {
             } else {
                 0.0
             },
-            isRoutingActive = true
+            isRoutingActive = true,
+            expectedArrivalTime = expectedArrival,
+            destinationSunsetTime = sunsetTime
         )
     }
 
