@@ -1,0 +1,51 @@
+cat << 'PATCH_EOF' > android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt.patch
+--- android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
+@@ -10,6 +10,8 @@
+ import kotlinx.coroutines.flow.SharingStarted
+ import kotlinx.coroutines.flow.StateFlow
++import kotlinx.coroutines.flow.MutableSharedFlow
++import kotlinx.coroutines.flow.asSharedFlow
+ import kotlinx.coroutines.flow.map
+ import kotlinx.coroutines.flow.stateIn
+ import kotlinx.coroutines.launch
+@@ -35,6 +37,13 @@
+     // Ideally, get current user ID from Auth. For now hardcoded or passed.
+     val currentUserId = "current_user_id_123"
+
++    private val _mapControlEvents = MutableSharedFlow<MapControlEvent>(extraBufferCapacity = 10)
++    val mapControlEvents = _mapControlEvents.asSharedFlow()
++
++    sealed class MapControlEvent {
++        data class Pan(val dx: Double, val dy: Double) : MapControlEvent()
++        data class Zoom(val delta: Int) : MapControlEvent()
++    }
++
+     private var ttsHelper: TtsHelper? = null
+
+     init {
+@@ -49,6 +58,19 @@
+     fun speakTurnInstruction(text: String) {
+         ttsHelper?.speak(text)
+     }
++
++    fun panMap(dx: Double, dy: Double) {
++        _mapControlEvents.tryEmit(MapControlEvent.Pan(dx, dy))
++    }
++
++    fun zoomMap(delta: Int) {
++        _mapControlEvents.tryEmit(MapControlEvent.Zoom(delta))
++    }
++
++    fun skipWaypoint() {
++        routingStateManager.skipWaypoint()
++        val remainingWaypoints = routingStateManager.routingState.value.waypoints
++        if (remainingWaypoints.size >= 2) {
++            calculateRoute(remainingWaypoints)
++        }
++    }
+
+
+     val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveGroupRiders("default_group")
+PATCH_EOF
+patch android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt < android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt.patch

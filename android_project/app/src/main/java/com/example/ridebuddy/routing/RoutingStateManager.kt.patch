@@ -1,0 +1,17 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/routing/RoutingStateManager.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/routing/RoutingStateManager.kt
+@@ -14,6 +14,14 @@
+         _routingState.update { it.copy(waypoints = emptyList(), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false) }
+     }
+
++    fun skipWaypoint() {
++        _routingState.update { state ->
++            if (state.waypoints.size > 1) {
++                state.copy(waypoints = state.waypoints.drop(1))
++            } else {
++                state
++            }
++        }
++    }
++
+     fun startRouting(result: RoutingResult) {

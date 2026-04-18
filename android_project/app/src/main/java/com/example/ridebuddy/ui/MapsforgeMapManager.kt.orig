@@ -159,17 +159,4 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         }
     }
 
-
-    fun zoomIn() {
-        mapView.model.mapViewPosition.zoomLevel = (mapView.model.mapViewPosition.zoomLevel + 1).toByte()
-    }
-
-    fun zoomOut() {
-        mapView.model.mapViewPosition.zoomLevel = (mapView.model.mapViewPosition.zoomLevel - 1).toByte()
-    }
-
-    fun pan(dx: Double, dy: Double) {
-        val center = mapView.model.mapViewPosition.center
-        mapView.model.mapViewPosition.center = LatLong(center.latitude + dy, center.longitude + dx)
-    }
 }
