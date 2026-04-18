@@ -8,6 +8,7 @@ data class RoutingState(
     val turnInstructions: List<TurnInstruction> = emptyList(),
     val currentInstructionIndex: Int = 0,
     val distanceToNextInstruction: Double = 0.0,
+    val distanceToDestination: Double = 0.0,
     val isRoutingActive: Boolean = false,
     val expectedArrivalTime: Long? = null,
     val destinationSunsetTime: Long? = null
