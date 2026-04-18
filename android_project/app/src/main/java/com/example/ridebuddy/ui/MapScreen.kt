@@ -11,6 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.ridebuddy.util.GpxParser
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -80,6 +85,24 @@ fun MapScreen(
 
     val ridersOverlay = remember { RidersOverlay() }
 
+    val coroutineScope = rememberCoroutineScope()
+    var mapManager by remember { mutableStateOf<MapsforgeMapManager?>(null) }
+    var importedRoute by remember { mutableStateOf<List<LatLong>>(emptyList()) }
+
+    val gpxPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                context.contentResolver.openInputStream(it)?.let { stream ->
+                    val parsedPoints = GpxParser.parse(stream)
+                    importedRoute = parsedPoints
+                }
+            }
+        }
+    }
+
+
     // Request permissions on launch
     LaunchedEffect(Unit) {
         if (!permissionsState.allPermissionsGranted) {
@@ -100,6 +123,13 @@ fun MapScreen(
         ridersOverlay.setRiders(newRiders)
     }
 
+
+    LaunchedEffect(importedRoute) {
+        if (importedRoute.isNotEmpty()) {
+            mapManager?.drawImportedRoute(importedRoute)
+        }
+    }
+
     var showStatusMenu by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -107,10 +137,11 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 MapView(ctx).apply {
-                    val mapManager = MapsforgeMapManager(ctx, this)
+                    val newMapManager = MapsforgeMapManager(ctx, this)
+                    mapManager = newMapManager
                     if (offlineStorageManager != null) {
                         val mapFile = offlineStorageManager.getOfflineFile("germany.map")
-                        mapManager.loadMapFile(mapFile)
+                        newMapManager.loadMapFile(mapFile)
                     }
                     this.layerManager.layers.add(ridersOverlay)
                 }
@@ -218,6 +249,13 @@ fun MapScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Start Sharing")
+                        }
+
+                        Button(
+                            onClick = { gpxPickerLauncher.launch("*/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Import GPX Route")
                         }
                     }
                 }
