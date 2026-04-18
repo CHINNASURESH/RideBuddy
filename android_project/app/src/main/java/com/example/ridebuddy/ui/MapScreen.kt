@@ -50,6 +50,8 @@ fun MapScreen(
 
     val compassManager = remember { CompassManager(context) }
     val heading by compassManager.heading.collectAsState()
+    val speedMps by compassManager.speedMps.collectAsState()
+    val altitude by compassManager.altitude.collectAsState()
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
@@ -94,6 +96,25 @@ fun MapScreen(
     val coroutineScope = rememberCoroutineScope()
     var mapManager by remember { mutableStateOf<MapsforgeMapManager?>(null) }
     var importedRoute by remember { mutableStateOf<List<LatLong>>(emptyList()) }
+
+    // Auto-Dark Mode based on sunset with continuous updates
+    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000L) // update every minute
+            currentTime = System.currentTimeMillis()
+        }
+    }
+
+    LaunchedEffect(routingState.destinationSunsetTime, currentTime) {
+        val sunsetTime = routingState.destinationSunsetTime
+        if (sunsetTime != null) {
+            val isNightMode = currentTime > sunsetTime
+            mapManager?.setNightMode(isNightMode)
+        } else {
+            mapManager?.setNightMode(false) // Default to day mode
+        }
+    }
 
     val gpxPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -186,6 +207,8 @@ fun MapScreen(
             update = { mapView ->
                 // Mapsforge v0.20 MapViewPosition does not natively support setBearing/bearing API.
                 // We fallback to Plan B: map remains North-Up, and we rotate the puck (rider overlay).
+
+                // Night mode is handled by the LaunchedEffect, which updates mapManager safely.
             }
         )
 
@@ -244,19 +267,31 @@ fun MapScreen(
             }
         }
 
-        // Control Panel
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        // Rider Dashboard
+        if (routingState.isRoutingActive) {
+            RiderDashboard(
+                speedMps = speedMps,
+                altitudeMeters = altitude,
+                distanceToDestinationMeters = routingState.distanceToDestination,
+                etaMillis = routingState.expectedArrivalTime,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+            )
+        } else {
+            // Control Panel
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 8.dp
             ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                 Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
 
                 if (!permissionsState.allPermissionsGranted) {
@@ -358,6 +393,7 @@ fun MapScreen(
                         }
                     }
                 }
+            }
             }
         }
 

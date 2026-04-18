@@ -54,6 +54,7 @@ class RoutingStateManager {
             } else {
                 0.0
             },
+            distanceToDestination = 0.0,
             isRoutingActive = true,
             expectedArrivalTime = expectedArrival,
             destinationSunsetTime = sunsetTime
@@ -77,6 +78,13 @@ class RoutingStateManager {
             nextInstruction.coordinate.latitude, nextInstruction.coordinate.longitude
         )
 
+        val distanceToDest = if (state.routePath.isNotEmpty()) {
+            val dest = state.routePath.last()
+            calculateDistance(location.latitude, location.longitude, dest.latitude, dest.longitude)
+        } else {
+            0.0
+        }
+
         // Check if we passed the instruction (e.g., distance < 20 meters)
         if (distanceToNext < 20.0) {
             val newIndex = currentInstructionIndex + 1
@@ -89,7 +97,8 @@ class RoutingStateManager {
                 _routingState.update {
                     it.copy(
                         currentInstructionIndex = newIndex,
-                        distanceToNextInstruction = newDistance
+                        distanceToNextInstruction = newDistance,
+                        distanceToDestination = distanceToDest
                     )
                 }
             } else {
@@ -98,6 +107,7 @@ class RoutingStateManager {
                     it.copy(
                         currentInstructionIndex = newIndex,
                         distanceToNextInstruction = 0.0,
+                        distanceToDestination = 0.0,
                         isRoutingActive = false
                     )
                 }
@@ -105,7 +115,10 @@ class RoutingStateManager {
         } else {
             // Just update the distance
             _routingState.update {
-                it.copy(distanceToNextInstruction = distanceToNext)
+                it.copy(
+                    distanceToNextInstruction = distanceToNext,
+                    distanceToDestination = distanceToDest
+                )
             }
         }
     }

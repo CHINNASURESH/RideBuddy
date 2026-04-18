@@ -25,6 +25,8 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     private var routePolyline: Polyline? = null
     private var importedRoutePolyline: Polyline? = null
 
+    private var currentNightMode: Boolean = false
+
     private val longPressLayer = object : org.mapsforge.map.layer.Layer() {
         override fun draw(boundingBox: org.mapsforge.core.model.BoundingBox?, zoomLevel: Byte, canvas: org.mapsforge.core.graphics.Canvas?, topLeftPoint: org.mapsforge.core.model.Point?) {}
         override fun onLongPress(tapLatLong: LatLong?, layerXY: org.mapsforge.core.model.Point?, tapXY: org.mapsforge.core.model.Point?): Boolean {
@@ -73,6 +75,23 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         mapView.model.mapViewPosition.center = LatLong(0.0, 0.0)
 
         mapView.model.mapViewPosition.zoomLevel = 12.toByte()
+    }
+
+    fun setNightMode(isNightMode: Boolean) {
+        if (this.currentNightMode == isNightMode) return
+        this.currentNightMode = isNightMode
+
+        if (isNightMode) {
+            // Try applying a different theme from InternalRenderTheme.
+            try {
+                tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.DEFAULT)
+            } catch (e: Exception) {
+                // Ignore if not available
+            }
+        } else {
+            tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
+        }
+        mapView.layerManager.redrawLayers()
     }
 
     fun drawRoute(routePoints: List<LatLong>, color: Int = android.graphics.Color.BLUE, strokeWidth: Float = 10f) {

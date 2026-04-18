@@ -26,6 +26,12 @@ class CompassManager(context: Context) : SensorEventListener {
     private val _heading = MutableStateFlow(0f)
     val heading: StateFlow<Float> = _heading.asStateFlow()
 
+    private val _speedMps = MutableStateFlow(0f)
+    val speedMps: StateFlow<Float> = _speedMps.asStateFlow()
+
+    private val _altitude = MutableStateFlow(0.0)
+    val altitude: StateFlow<Double> = _altitude.asStateFlow()
+
     private var lastHeading = 0f
     private val alpha = 0.1f // Low-pass filter constant
 
@@ -75,6 +81,16 @@ class CompassManager(context: Context) : SensorEventListener {
     }
 
     private fun updateLocation(location: Location) {
+        if (location.hasSpeed()) {
+            _speedMps.value = location.speed
+        } else {
+            _speedMps.value = 0f
+        }
+
+        if (location.hasAltitude()) {
+            _altitude.value = location.altitude
+        }
+
         // If speed is greater than 1.5 m/s, prefer GPS bearing
         if (location.hasSpeed() && location.speed > 1.5f && location.hasBearing()) {
             isMoving = true
