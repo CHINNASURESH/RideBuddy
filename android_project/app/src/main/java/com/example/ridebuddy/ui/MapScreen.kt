@@ -216,6 +216,34 @@ fun MapScreen(
             )
         }
 
+        // Night Riding Warning Overlay
+        if (routingState.isRoutingActive && routingState.isNightRidingAnticipated) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (!isOnline) 100.dp else 68.dp)
+                    .fillMaxWidth(0.9f),
+                color = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+                shape = RoundedCornerShape(8.dp),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Filled.Warning, contentDescription = "Warning", modifier = Modifier.padding(end = 8.dp))
+                    Text(
+                        text = "Night Riding Anticipated: Arrival after sunset.",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
+        }
+
         // Control Panel
         Surface(
             modifier = Modifier
