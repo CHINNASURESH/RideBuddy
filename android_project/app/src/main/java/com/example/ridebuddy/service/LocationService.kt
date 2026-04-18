@@ -10,7 +10,9 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import android.location.Location
+import android.os.PowerManager
 import com.example.ridebuddy.data.LocationRepository
+import com.example.ridebuddy.routing.RoutingStateManager
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +28,15 @@ class LocationService : Service() {
     @Inject
     lateinit var repository: LocationRepository
 
+    @Inject
+    lateinit var routingStateManager: RoutingStateManager
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var routingJob: kotlinx.coroutines.Job? = null
 
     private var userId: String? = null
     private var groupId: String? = null
@@ -56,12 +64,26 @@ class LocationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
+                if (wakeLock == null) {
+                    val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+                    wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RideBuddy::LocationServiceWakelock")
+                    wakeLock?.acquire(10 * 60 * 60 * 1000L /*10 hours*/)
+                }
+
                 userId = intent.getStringExtra(EXTRA_USER_ID)
                 groupId = intent.getStringExtra(EXTRA_GROUP_ID)
                 sharingExpiry = intent.getLongExtra(EXTRA_EXPIRY, 0L)
                 val interval = intent.getLongExtra(EXTRA_INTERVAL, 10000L) // Default 10s
                 startForegroundService()
                 startLocationUpdates(interval)
+
+                if (routingJob == null) {
+                    routingJob = serviceScope.launch {
+                        routingStateManager.routingState.collect { state ->
+                            updateNotification(state)
+                        }
+                    }
+                }
             }
             ACTION_STOP -> {
                 stopService()
@@ -72,6 +94,31 @@ class LocationService : Service() {
             }
         }
         return START_NOT_STICKY
+    }
+
+    private fun updateNotification(state: com.example.ridebuddy.routing.RoutingState) {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+
+        val instruction = state.currentInstruction
+        val contentText = if (state.isRoutingActive && instruction != null) {
+            val dist = if (state.distanceToNextInstruction < 1000) {
+                "${state.distanceToNextInstruction.toInt()}m"
+            } else {
+                String.format("%.1fkm", state.distanceToNextInstruction / 1000.0)
+            }
+            "Next: ${instruction.message} in $dist"
+        } else {
+            "Sharing location..."
+        }
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Ride Buddy")
+            .setContentText(contentText)
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        notificationManager.notify(1, notification)
     }
 
     private fun startForegroundService() {
@@ -110,6 +157,8 @@ class LocationService : Service() {
                         stopService()
                         return
                     }
+
+                    routingStateManager.updateLocation(location)
 
                     val shouldUpdate = lastUploadedLocation?.let {
                         location.distanceTo(it) >= 10f
@@ -170,6 +219,11 @@ class LocationService : Service() {
         serviceScope.cancel()
         if (::locationCallback.isInitialized) {
             fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+            }
         }
     }
 
