@@ -1,4 +1,5 @@
 [versions]
+room = "2.6.1"
 agp = "8.2.2"
 kotlin = "1.9.22"
 kotlinComposeCompiler = "1.5.8"
@@ -62,7 +63,13 @@ mapsforge-map-android = { group = "org.mapsforge", name = "mapsforge-map-android
 mapsforge-map-reader = { group = "org.mapsforge", name = "mapsforge-map-reader", version.ref = "mapsforge" }
 mapsforge-themes = { group = "org.mapsforge", name = "mapsforge-themes", version.ref = "mapsforge" }
 
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+
 [plugins]
+ksp = { id = "com.google.devtools.ksp", version = "1.9.22-1.0.17" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version = "2.0.0" }

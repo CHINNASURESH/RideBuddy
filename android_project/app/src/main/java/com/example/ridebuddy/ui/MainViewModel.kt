@@ -28,10 +28,14 @@ class MainViewModel @Inject constructor(
     private val repository: LocationRepository,
     private val authRepository: AuthRepository,
     private val application: Application,
-    networkMonitor: NetworkMonitor
+    networkMonitor: NetworkMonitor,
+    private val rideDao: com.example.ridebuddy.data.local.RideDao
 ) : ViewModel() {
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
+
+    private val _isRecording = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording
 
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
@@ -99,6 +103,31 @@ class MainViewModel @Inject constructor(
                 androidx.core.content.ContextCompat.startForegroundService(application, intent)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun toggleRecording(context: android.content.Context, start: Boolean) {
+        _isRecording.value = start
+        val intent = Intent(context, LocationService::class.java).apply {
+            action = if (start) LocationService.ACTION_START_RECORDING else LocationService.ACTION_STOP_RECORDING
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    fun exportLatestRide(context: android.content.Context, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val session = rideDao.getLastSession()
+            if (session != null) {
+                val points = rideDao.getPointsForSession(session.id)
+                val success = com.example.ridebuddy.util.GpxExporter.exportRideSession(context, session, points)
+                onResult(success)
+            } else {
+                onResult(false)
             }
         }
     }

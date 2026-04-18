@@ -41,6 +41,9 @@ class LocationService : Service() {
     @Inject
     lateinit var networkMonitor: NetworkMonitor
 
+    @Inject
+    lateinit var rideDao: com.example.ridebuddy.data.local.RideDao
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -54,11 +57,17 @@ class LocationService : Service() {
     private var sharingExpiry: Long = 0L
     private var lastUploadedLocation: Location? = null
 
+    private var isRecording: Boolean = false
+    private var currentSessionId: Long? = null
+    private var lastRecordedLocation: Location? = null
+
     companion object {
         const val CHANNEL_ID = "location_service_channel"
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
         const val ACTION_UPDATE_INTERVAL = "ACTION_UPDATE_INTERVAL"
+        const val ACTION_START_RECORDING = "ACTION_START_RECORDING"
+        const val ACTION_STOP_RECORDING = "ACTION_STOP_RECORDING"
 
         const val EXTRA_INTERVAL = "EXTRA_INTERVAL"
         const val EXTRA_USER_ID = "EXTRA_USER_ID"
@@ -130,6 +139,34 @@ class LocationService : Service() {
                 val interval = intent.getLongExtra(EXTRA_INTERVAL, 10000L)
                 startLocationUpdates(interval)
             }
+            ACTION_START_RECORDING -> {
+                isRecording = true
+                serviceScope.launch {
+                    val session = com.example.ridebuddy.data.local.RideSession(startTime = System.currentTimeMillis())
+                    currentSessionId = rideDao.insertSession(session)
+                    lastRecordedLocation = null
+                }
+                // Ensure foreground service is running and location updates are active
+                startForegroundService()
+                startLocationUpdates(10000L) // Ensure we have a reasonable interval
+            }
+            ACTION_STOP_RECORDING -> {
+                isRecording = false
+                currentSessionId?.let { sessionId ->
+                    serviceScope.launch {
+                        val session = rideDao.getSession(sessionId)
+                        if (session != null) {
+                            rideDao.updateSession(session.copy(endTime = System.currentTimeMillis()))
+                        }
+                    }
+                }
+                currentSessionId = null
+                lastRecordedLocation = null
+                // We might want to stop the service entirely if not sharing location
+                if (userId == null || System.currentTimeMillis() > sharingExpiry) {
+                    stopService()
+                }
+            }
         }
         return START_NOT_STICKY
     }
@@ -197,6 +234,33 @@ class LocationService : Service() {
                     }
 
                     routingStateManager.updateLocation(location)
+
+                    if (isRecording) {
+                        currentSessionId?.let { sessionId ->
+                            serviceScope.launch {
+                                rideDao.insertPoint(
+                                    com.example.ridebuddy.data.local.RidePoint(
+                                        sessionId = sessionId,
+                                        timestamp = System.currentTimeMillis(),
+                                        latitude = location.latitude,
+                                        longitude = location.longitude,
+                                        elevation = if (location.hasAltitude()) location.altitude else 0.0
+                                    )
+                                )
+
+                                // Update distance
+                                val lastLoc = lastRecordedLocation
+                                if (lastLoc != null) {
+                                    val distance = lastLoc.distanceTo(location).toDouble()
+                                    val session = rideDao.getSession(sessionId)
+                                    if (session != null && distance > 0) {
+                                        rideDao.updateSession(session.copy(totalDistanceMeters = session.totalDistanceMeters + distance))
+                                    }
+                                }
+                                lastRecordedLocation = location
+                            }
+                        }
+                    }
 
                     val shouldUpdate = lastUploadedLocation?.let {
                         location.distanceTo(it) >= 10f

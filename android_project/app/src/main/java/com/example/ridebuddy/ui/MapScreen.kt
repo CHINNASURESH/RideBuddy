@@ -83,6 +83,8 @@ fun MapScreen(
     var selectedFrequency by remember { mutableStateOf(10) } // Minutes (0 = Live)
     var isSharing by remember { mutableStateOf(false) }
 
+    val isRecording by viewModel.isRecording.collectAsState()
+
     val ridersOverlay = remember { RidersOverlay() }
 
     val coroutineScope = rememberCoroutineScope()
@@ -276,6 +278,40 @@ fun MapScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Import GPX Route")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Record Ride:", style = MaterialTheme.typography.labelLarge)
+                    if (isRecording) {
+                        Button(
+                            onClick = {
+                                viewModel.toggleRecording(context, false)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Stop Recording")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                viewModel.toggleRecording(context, true)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Start Recording")
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.exportLatestRide(context) { success ->
+                                    // Normally we would show a toast here, but simple implementation is fine
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Export Last Ride GPX")
                         }
                     }
                 }
