@@ -14,6 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Place
 import com.example.ridebuddy.data.User
 import org.mapsforge.map.android.view.MapView
 import androidx.compose.ui.viewinterop.AndroidView
@@ -85,10 +91,12 @@ fun MapScreen(
         val currentUserId = viewModel.currentUserId
         val newRiders = friends.map { user ->
             val userHeading = if (user.userId == currentUserId) heading else null
-            Rider(user.userId, user.position, android.graphics.Color.RED, userHeading)
+            Rider(user.userId, user.position, android.graphics.Color.RED, userHeading, user.status)
         }
         ridersOverlay.setRiders(newRiders)
     }
+
+    var showStatusMenu by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
@@ -190,6 +198,60 @@ fun MapScreen(
                             Text("Start Sharing")
                         }
                     }
+                }
+            }
+        }
+
+        // Quick-Action UI
+        if (isSharing) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp, bottom = 100.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                if (showStatusMenu) {
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.setStatus("Need Gas")
+                            showStatusMenu = false
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Place, contentDescription = "Need Gas")
+                    }
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.setStatus("Pulled Over")
+                            showStatusMenu = false
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Info, contentDescription = "Pulled Over")
+                    }
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.setStatus("Hazard Ahead")
+                            showStatusMenu = false
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = "Hazard Ahead")
+                    }
+                    FloatingActionButton(
+                        onClick = {
+                            viewModel.setStatus(null) // Clear Status
+                            showStatusMenu = false
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Clear Status")
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { showStatusMenu = !showStatusMenu },
+                ) {
+                    Icon(if (showStatusMenu) Icons.Filled.Clear else Icons.Filled.Add, contentDescription = "Status Menu")
                 }
             }
         }

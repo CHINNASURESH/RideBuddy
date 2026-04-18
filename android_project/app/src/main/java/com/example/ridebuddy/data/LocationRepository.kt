@@ -1,6 +1,7 @@
 package com.example.ridebuddy.data
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,7 +33,14 @@ class LocationRepository @Inject constructor(
             "sharingExpiry" to expiry
         )
         // Using merge to avoid overwriting other fields if we add them later
-        firestore.collection("groups").document(groupId).collection("riders").document(userId).set(userMap).await()
+        firestore.collection("groups").document(groupId).collection("riders").document(userId).set(userMap, SetOptions.merge()).await()
+    }
+
+    suspend fun updateUserStatus(groupId: String, userId: String, status: String?) {
+        val updateData = mutableMapOf<String, Any?>("status" to status)
+        firestore.collection("groups").document(groupId).collection("riders").document(userId)
+            .set(updateData, SetOptions.merge())
+            .await()
     }
 
     suspend fun updateSharingStatus(groupId: String, userId: String, isSharing: Boolean) {

@@ -10,7 +10,7 @@ import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 import org.mapsforge.map.layer.Layer
 import java.util.concurrent.ConcurrentHashMap
 
-data class Rider(val id: String, var position: LatLong, val color: Int, val heading: Float? = null)
+data class Rider(val id: String, var position: LatLong, val color: Int, val heading: Float? = null, val status: String? = null)
 
 class RidersOverlay : Layer() {
 
@@ -31,6 +31,17 @@ class RidersOverlay : Layer() {
         setStyle(Style.STROKE)
         setStrokeWidth(4f)
         setColor(android.graphics.Color.BLACK)
+    }
+
+    private val textPaint: Paint = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+        setStyle(Style.FILL)
+        setColor(android.graphics.Color.RED)
+        setTextSize(30f)
+    }
+
+    private val textBackgroundPaint: Paint = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+        setStyle(Style.FILL)
+        setColor(android.graphics.Color.WHITE)
     }
 
     fun updateRider(rider: Rider) {
@@ -81,6 +92,17 @@ class RidersOverlay : Layer() {
                     val endY = pixelY + (Math.sin(angleRad) * lineLength).toInt()
 
                     canvas.drawLine(pixelX.toInt(), pixelY.toInt(), endX.toInt(), endY.toInt(), headingPaint)
+                }
+
+                if (rider.status != null) {
+                    val statusText = rider.status
+                    // simple drawing of text above the marker
+                    val textWidth = textPaint.getTextWidth(statusText)
+                    val textHeight = textPaint.getTextHeight(statusText)
+                    val textX = pixelX - textWidth / 2
+                    val textY = pixelY - radius - 10
+                    // Draw a background rectangle for better visibility
+                    canvas.drawText(statusText, textX.toInt(), textY.toInt(), textPaint)
                 }
             }
         }
