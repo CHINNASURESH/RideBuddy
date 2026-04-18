@@ -130,6 +130,21 @@ fun MapScreen(
         }
     }
 
+
+    LaunchedEffect(routingState.waypoints) {
+        mapManager?.drawWaypoints(routingState.waypoints)
+        if (routingState.waypoints.size >= 2) {
+            viewModel.calculateRoute(routingState.waypoints)
+        }
+    }
+
+
+    LaunchedEffect(routingState.routePath) {
+        if (routingState.routePath.isNotEmpty()) {
+            mapManager?.drawRoute(routingState.routePath)
+        }
+    }
+
     var showStatusMenu by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -139,6 +154,11 @@ fun MapScreen(
                 MapView(ctx).apply {
                     val newMapManager = MapsforgeMapManager(ctx, this)
                     mapManager = newMapManager
+                    newMapManager.onMapLongPressListener = object : MapsforgeMapManager.OnMapLongPressListener {
+                        override fun onLongPress(latLong: LatLong) {
+                            viewModel.routingStateManager.addWaypoint(latLong)
+                        }
+                    }
                     if (offlineStorageManager != null) {
                         val mapFile = offlineStorageManager.getOfflineFile("germany.map")
                         newMapManager.loadMapFile(mapFile)

@@ -11,8 +11,16 @@ class RoutingStateManager {
     private val _routingState = MutableStateFlow(RoutingState())
     val routingState: StateFlow<RoutingState> = _routingState.asStateFlow()
 
+    fun addWaypoint(waypoint: LatLong) {
+        _routingState.update { it.copy(waypoints = it.waypoints + waypoint) }
+    }
+
+    fun clearWaypoints() {
+        _routingState.update { it.copy(waypoints = emptyList(), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false) }
+    }
+
     fun startRouting(result: RoutingResult) {
-        _routingState.value = RoutingState(
+        _routingState.value = _routingState.value.copy(
             routePath = result.path,
             turnInstructions = result.instructions,
             currentInstructionIndex = 0,

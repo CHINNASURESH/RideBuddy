@@ -11,7 +11,8 @@ import java.util.ArrayList
 
 class LocalBRouterEngine(private val context: Context, private val brouterDir: File) : OfflineRoutingEngine {
 
-    override suspend fun calculateRoute(start: LatLong, destination: LatLong): RoutingResult {
+    override suspend fun calculateRoute(waypoints: List<LatLong>): RoutingResult {
+        if (waypoints.size < 2) return RoutingResult(emptyList(), emptyList())
         val rc = RoutingContext()
         rc.turnInstructionMode = 3 // osmand style
 
@@ -23,22 +24,16 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
         val profileFile = File(brouterDir, "motorcycle.brf")
         rc.localFunction = profileFile.absolutePath
 
-        // BRouter expects coordinates in 1E6 format with +180 and +90 shift
-        val startLon = ((start.longitude + 180.0) * 1000000.0).toInt()
-        val startLat = ((start.latitude + 90.0) * 1000000.0).toInt()
-        val startNode = OsmNodeNamed(OsmNode(startLon, startLat))
-        startNode.name = "start"
+        val osmWaypoints = ArrayList<OsmNodeNamed>()
+        for ((index, waypoint) in waypoints.withIndex()) {
+            val lon = ((waypoint.longitude + 180.0) * 1000000.0).toInt()
+            val lat = ((waypoint.latitude + 90.0) * 1000000.0).toInt()
+            val node = OsmNodeNamed(OsmNode(lon, lat))
+            node.name = "waypoint_$index"
+            osmWaypoints.add(node)
+        }
 
-        val destLon = ((destination.longitude + 180.0) * 1000000.0).toInt()
-        val destLat = ((destination.latitude + 90.0) * 1000000.0).toInt()
-        val destNode = OsmNodeNamed(OsmNode(destLon, destLat))
-        destNode.name = "destination"
-
-        val waypoints = ArrayList<OsmNodeNamed>()
-        waypoints.add(startNode)
-        waypoints.add(destNode)
-
-        val engine = RoutingEngine(null, null, segmentsDir, waypoints, rc)
+        val engine = RoutingEngine(null, null, segmentsDir, osmWaypoints, rc)
 
         engine.doRun(10000)
 

@@ -16,6 +16,7 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
+
     namespace = "com.example.ridebuddy"
     compileSdk = 35
 

@@ -15,10 +15,27 @@ import org.mapsforge.map.rendertheme.InternalRenderTheme
 import java.io.File
 
 class MapsforgeMapManager(private val context: Context, private val mapView: MapView) {
+    interface OnMapLongPressListener {
+        fun onLongPress(latLong: LatLong)
+    }
+    var onMapLongPressListener: OnMapLongPressListener? = null
+
 
     private var tileRendererLayer: TileRendererLayer? = null
     private var routePolyline: Polyline? = null
     private var importedRoutePolyline: Polyline? = null
+
+    private val longPressLayer = object : org.mapsforge.map.layer.Layer() {
+        override fun draw(boundingBox: org.mapsforge.core.model.BoundingBox?, zoomLevel: Byte, canvas: org.mapsforge.core.graphics.Canvas?, topLeftPoint: org.mapsforge.core.model.Point?) {}
+        override fun onLongPress(tapLatLong: LatLong?, layerXY: org.mapsforge.core.model.Point?, tapXY: org.mapsforge.core.model.Point?): Boolean {
+            tapLatLong?.let {
+                onMapLongPressListener?.onLongPress(it)
+                return true
+            }
+            return false
+        }
+    }
+
 
     init {
         // Initialize Mapsforge graphic factory if not already initialized
@@ -28,6 +45,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         mapView.isClickable = true
         mapView.mapScaleBar.isVisible = true
         mapView.setBuiltInZoomControls(true)
+        mapView.layerManager.layers.add(longPressLayer)
     }
 
     fun loadMapFile(mapFile: File) {
@@ -111,4 +129,34 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         mapView.destroyAll()
         AndroidGraphicFactory.clearResourceMemoryCache()
     }
+
+    private val waypointMarkers = mutableListOf<org.mapsforge.map.layer.overlay.Marker>()
+
+    fun drawWaypoints(waypoints: List<LatLong>) {
+        for (marker in waypointMarkers) {
+            mapView.layerManager.layers.remove(marker)
+        }
+        waypointMarkers.clear()
+
+        for ((index, waypoint) in waypoints.withIndex()) {
+            // But Mapforge Circle doesn't have text. So let's use a standard Marker and we provide a Bitmap.
+            // To create a generic bitmap, we can draw on android.graphics.Canvas and convert.
+
+            val androidBitmap = android.graphics.Bitmap.createBitmap(100, 100, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(androidBitmap)
+            val p = android.graphics.Paint()
+            p.color = android.graphics.Color.RED
+            canvas.drawCircle(50f, 50f, 40f, p)
+            p.color = android.graphics.Color.WHITE
+            p.textSize = 40f
+            p.textAlign = android.graphics.Paint.Align.CENTER
+            canvas.drawText("${index + 1}", 50f, 65f, p)
+
+            val drawable = android.graphics.drawable.BitmapDrawable(context.resources, androidBitmap)
+            val marker = org.mapsforge.map.layer.overlay.Marker(waypoint, org.mapsforge.map.android.graphics.AndroidGraphicFactory.convertToBitmap(drawable), 0, 0)
+            mapView.layerManager.layers.add(marker)
+            waypointMarkers.add(marker)
+        }
+    }
+
 }

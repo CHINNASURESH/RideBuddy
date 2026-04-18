@@ -24,6 +24,7 @@ import com.example.ridebuddy.network.NetworkMonitor
 @HiltViewModel
 class MainViewModel @Inject constructor(
     val routingStateManager: RoutingStateManager,
+    private val routingEngine: com.example.ridebuddy.routing.OfflineRoutingEngine,
     private val repository: LocationRepository,
     private val authRepository: AuthRepository,
     private val application: Application,
@@ -117,4 +118,12 @@ class MainViewModel @Inject constructor(
         }
         application.startService(intent)
     }
+
+    fun calculateRoute(waypoints: List<org.mapsforge.core.model.LatLong>) {
+        viewModelScope.launch {
+            val result = routingEngine.calculateRoute(waypoints)
+            routingStateManager.startRouting(result)
+        }
+    }
+
 }
