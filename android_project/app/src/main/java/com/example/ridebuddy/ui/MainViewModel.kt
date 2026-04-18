@@ -16,9 +16,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.ridebuddy.routing.RoutingStateManager
+import com.example.ridebuddy.routing.RoutingState
+import com.example.ridebuddy.routing.TtsHelper
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
+    val routingStateManager: RoutingStateManager,
     private val repository: LocationRepository,
     private val authRepository: AuthRepository,
     private val application: Application
@@ -26,6 +30,22 @@ class MainViewModel @Inject constructor(
 
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
+
+    private var ttsHelper: TtsHelper? = null
+
+    init {
+        ttsHelper = TtsHelper(application)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ttsHelper?.shutdown()
+    }
+
+    fun speakTurnInstruction(text: String) {
+        ttsHelper?.speak(text)
+    }
+
 
     val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveGroupRiders("default_group")
         .map { users ->
