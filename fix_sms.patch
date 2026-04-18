@@ -1,0 +1,11 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/service/LocationService.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/service/LocationService.kt
+@@ -118,7 +118,7 @@
+                             delay(3 * 60 * 1000L)
+
+                             // Only dispatch if we are offline and have a valid location
+-                            if (!networkMonitor.isOnline.value) {
++                            if (!networkMonitor.isOnline.value && billingManager.isPro.value) {
+                                 lastUploadedLocation?.let { loc ->
+                                     userId?.let { uid ->
+                                         val heading = repository.localUserHeading.value

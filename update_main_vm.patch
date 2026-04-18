@@ -1,0 +1,65 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
+@@ -1,5 +1,6 @@
+ package com.example.ridebuddy.ui
+
++import android.app.Activity
+ import android.app.Application
+ import android.content.Intent
+ import androidx.lifecycle.ViewModel
+@@ -23,6 +24,7 @@
+ import com.example.ridebuddy.routing.RoutingState
+ import com.example.ridebuddy.routing.TtsHelper
+ import com.example.ridebuddy.network.NetworkMonitor
++import com.example.ridebuddy.billing.BillingManager
+
+ @HiltViewModel
+ class MainViewModel @Inject constructor(
+@@ -32,10 +34,13 @@
+     private val authRepository: AuthRepository,
+     private val application: Application,
+     networkMonitor: NetworkMonitor,
+-    private val rideDao: com.example.ridebuddy.data.local.RideDao
++    private val rideDao: com.example.ridebuddy.data.local.RideDao,
++    private val billingManager: BillingManager
+ ) : ViewModel() {
+
+     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
++
++    val isPro: StateFlow<Boolean> = billingManager.isPro
+
+     private val _isRecording = kotlinx.coroutines.flow.MutableStateFlow(false)
+     val isRecording: StateFlow<Boolean> = _isRecording
+@@ -62,6 +67,19 @@
+             }
+         }
+
++        // Collect isPro changes and update Firestore if we go pro
++        viewModelScope.launch {
++            billingManager.isPro.collect { proStatus ->
++                if (proStatus) {
++                    try {
++                        val currentUserId = authRepository.getUserId()
++                        repository.updateUserProStatus(currentUserId, true)
++                    } catch (e: Exception) {
++                        e.printStackTrace()
++                    }
++                }
++            }
++        }
+     }
+
+     val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveGroupRiders("default_group")
+@@ -107,6 +125,12 @@
+             }
+         }
+     }
++
++    fun launchBillingFlow(activity: Activity, onComplete: (Boolean) -> Unit) {
++        viewModelScope.launch {
++            billingManager.launchBillingFlow(activity, onComplete)
++        }
++    }
+
+     fun toggleRecording(context: android.content.Context, start: Boolean) {
+         _isRecording.value = start

@@ -1,0 +1,21 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/ui/MainViewModel.kt
+@@ -62,6 +62,19 @@
+         if (remainingWaypoints.size >= 2) {
+             calculateRoute(remainingWaypoints)
+         }
++
++        // Collect isPro changes and update Firestore if we go pro
++        viewModelScope.launch {
++            billingManager.isPro.collect { proStatus ->
++                if (proStatus) {
++                    try {
++                        val currentUserId = authRepository.getUserId()
++                        repository.updateUserProStatus(currentUserId, true)
++                    } catch (e: Exception) {
++                        e.printStackTrace()
++                    }
++                }
++            }
++        }
+     }

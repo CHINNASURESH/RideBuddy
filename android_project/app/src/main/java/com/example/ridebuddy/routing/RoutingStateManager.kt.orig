@@ -6,13 +6,45 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.mapsforge.core.model.LatLong
+import com.example.ridebuddy.util.SolarMath
 
 class RoutingStateManager {
     private val _routingState = MutableStateFlow(RoutingState())
     val routingState: StateFlow<RoutingState> = _routingState.asStateFlow()
 
+    fun addWaypoint(waypoint: LatLong) {
+        _routingState.update { it.copy(waypoints = it.waypoints + waypoint) }
+    }
+
+    fun clearWaypoints() {
+        _routingState.update { it.copy(waypoints = emptyList(), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false) }
+    }
+
+    fun skipWaypoint() {
+        _routingState.update { state ->
+            if (state.waypoints.size > 2) {
+                val newWaypoints = state.waypoints.toMutableList()
+                newWaypoints.removeAt(1) // Remove the next destination, keep origin
+                state.copy(waypoints = newWaypoints)
+            } else if (state.waypoints.size == 2) {
+                // If there's only origin and one destination, and we skip it, we clear the route
+                state.copy(waypoints = listOf(state.waypoints[0]), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false)
+            } else {
+                state
+            }
+        }
+    }
+
     fun startRouting(result: RoutingResult) {
-        _routingState.value = RoutingState(
+        val expectedArrival = System.currentTimeMillis() + (result.totalSeconds * 1000L)
+        val sunsetTime = if (result.path.isNotEmpty()) {
+            val destination = result.path.last()
+            SolarMath.calculateSunset(destination.latitude, destination.longitude)
+        } else {
+            null
+        }
+
+        _routingState.value = _routingState.value.copy(
             routePath = result.path,
             turnInstructions = result.instructions,
             currentInstructionIndex = 0,
@@ -22,7 +54,10 @@ class RoutingStateManager {
             } else {
                 0.0
             },
-            isRoutingActive = true
+            distanceToDestination = 0.0,
+            isRoutingActive = true,
+            expectedArrivalTime = expectedArrival,
+            destinationSunsetTime = sunsetTime
         )
     }
 
@@ -40,8 +75,15 @@ class RoutingStateManager {
         val nextInstruction = state.turnInstructions[currentInstructionIndex]
         val distanceToNext = calculateDistance(
             location.latitude, location.longitude,
-            nextInstruction.coordinate.latitude, nextInstruction.coordinate.coordinate.longitude
+            nextInstruction.coordinate.latitude, nextInstruction.coordinate.longitude
         )
+
+        val distanceToDest = if (state.routePath.isNotEmpty()) {
+            val dest = state.routePath.last()
+            calculateDistance(location.latitude, location.longitude, dest.latitude, dest.longitude)
+        } else {
+            0.0
+        }
 
         // Check if we passed the instruction (e.g., distance < 20 meters)
         if (distanceToNext < 20.0) {
@@ -55,7 +97,8 @@ class RoutingStateManager {
                 _routingState.update {
                     it.copy(
                         currentInstructionIndex = newIndex,
-                        distanceToNextInstruction = newDistance
+                        distanceToNextInstruction = newDistance,
+                        distanceToDestination = distanceToDest
                     )
                 }
             } else {
@@ -64,6 +107,7 @@ class RoutingStateManager {
                     it.copy(
                         currentInstructionIndex = newIndex,
                         distanceToNextInstruction = 0.0,
+                        distanceToDestination = 0.0,
                         isRoutingActive = false
                     )
                 }
@@ -71,7 +115,10 @@ class RoutingStateManager {
         } else {
             // Just update the distance
             _routingState.update {
-                it.copy(distanceToNextInstruction = distanceToNext)
+                it.copy(
+                    distanceToNextInstruction = distanceToNext,
+                    distanceToDestination = distanceToDest
+                )
             }
         }
     }
