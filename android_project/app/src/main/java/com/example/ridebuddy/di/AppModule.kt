@@ -9,6 +9,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import android.content.Context
+import androidx.room.Room
+import com.example.ridebuddy.data.local.AppDatabase
+import com.example.ridebuddy.data.local.RideDao
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 
 @Module
@@ -25,5 +30,21 @@ object AppModule {
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth {
         return Firebase.auth
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "ridebuddy-db"
+        ).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRideDao(appDatabase: AppDatabase): RideDao {
+        return appDatabase.rideDao()
     }
 }

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
     id("kotlin-kapt")
+    alias(libs.plugins.ksp)
 }
 
 val localProperties = Properties()
@@ -89,6 +90,9 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.room.ktx)
     implementation(libs.hilt.navigation.compose)
 
     // Accompanist Permissions
