@@ -1,0 +1,19 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/ui/MapsforgeMapManager.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/ui/MapsforgeMapManager.kt
+@@ -124,4 +124,16 @@
+         }
+     }
+
++    fun zoomIn() {
++        mapView.model.mapViewPosition.zoomLevel = (mapView.model.mapViewPosition.zoomLevel + 1).toByte()
++    }
++
++    fun zoomOut() {
++        mapView.model.mapViewPosition.zoomLevel = (mapView.model.mapViewPosition.zoomLevel - 1).toByte()
++    }
++
++    fun pan(dx: Double, dy: Double) {
++        val center = mapView.model.mapViewPosition.center
++        mapView.model.mapViewPosition.center = LatLong(center.latitude + dy, center.longitude + dx)
++    }
+ }

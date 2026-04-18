@@ -19,6 +19,21 @@ class RoutingStateManager {
         _routingState.update { it.copy(waypoints = emptyList(), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false) }
     }
 
+    fun skipWaypoint() {
+        _routingState.update { state ->
+            if (state.waypoints.size > 2) {
+                val newWaypoints = state.waypoints.toMutableList()
+                newWaypoints.removeAt(1) // Remove the next destination, keep origin
+                state.copy(waypoints = newWaypoints)
+            } else if (state.waypoints.size == 2) {
+                // If there's only origin and one destination, and we skip it, we clear the route
+                state.copy(waypoints = listOf(state.waypoints[0]), routePath = emptyList(), turnInstructions = emptyList(), isRoutingActive = false)
+            } else {
+                state
+            }
+        }
+    }
+
     fun startRouting(result: RoutingResult) {
         _routingState.value = _routingState.value.copy(
             routePath = result.path,

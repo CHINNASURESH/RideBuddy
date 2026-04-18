@@ -9,6 +9,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+
+
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -144,6 +148,17 @@ fun MapScreen(
     LaunchedEffect(routingState.routePath) {
         if (routingState.routePath.isNotEmpty()) {
             mapManager?.drawRoute(routingState.routePath)
+        }
+    }
+
+    LaunchedEffect(viewModel.mapControlEvents) {
+        viewModel.mapControlEvents.collect { event ->
+            when (event) {
+                is MainViewModel.MapControlEvent.Pan -> mapManager?.pan(event.dx, event.dy)
+                is MainViewModel.MapControlEvent.Zoom -> {
+                    if (event.delta > 0) mapManager?.zoomIn() else mapManager?.zoomOut()
+                }
+            }
         }
     }
 
