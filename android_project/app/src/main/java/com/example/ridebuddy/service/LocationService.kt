@@ -12,13 +12,17 @@ import androidx.core.app.NotificationCompat
 import android.location.Location
 import android.os.PowerManager
 import com.example.ridebuddy.data.LocationRepository
+import com.example.ridebuddy.network.NetworkMonitor
 import com.example.ridebuddy.routing.RoutingStateManager
+import com.example.ridebuddy.sms.SmsDispatcher
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,12 +35,19 @@ class LocationService : Service() {
     @Inject
     lateinit var routingStateManager: RoutingStateManager
 
+    @Inject
+    lateinit var smsDispatcher: SmsDispatcher
+
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var routingJob: kotlinx.coroutines.Job? = null
+    private var smsJob: kotlinx.coroutines.Job? = null
 
     private var userId: String? = null
     private var groupId: String? = null
@@ -81,6 +92,33 @@ class LocationService : Service() {
                     routingJob = serviceScope.launch {
                         routingStateManager.routingState.collect { state ->
                             updateNotification(state)
+                        }
+                    }
+                }
+
+                if (smsJob == null) {
+                    smsJob = serviceScope.launch {
+                        // 3-minute recurring SMS loop when offline
+                        while (isActive) {
+                            delay(3 * 60 * 1000L)
+
+                            // Only dispatch if we are offline and have a valid location
+                            if (!networkMonitor.isOnline.value) {
+                                lastUploadedLocation?.let { loc ->
+                                    userId?.let { uid ->
+                                        val heading = repository.localUserHeading.value
+                                        val status = repository.localUserStatus.value
+
+                                        smsDispatcher.dispatch(
+                                            userId = uid,
+                                            lat = loc.latitude,
+                                            lon = loc.longitude,
+                                            heading = heading,
+                                            status = status
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

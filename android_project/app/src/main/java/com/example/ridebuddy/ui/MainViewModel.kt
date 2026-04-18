@@ -57,12 +57,17 @@ class MainViewModel @Inject constructor(
                 UserUiModel(
                     userId = user.userId,
                     position = LatLong(user.latitude, user.longitude),
+                    heading = user.heading,
                     lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}",
                     status = user.status
                 )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun updateHeading(heading: Float) {
+        repository.localUserHeading.value = heading
+    }
 
     fun setStatus(status: String?) {
         viewModelScope.launch {

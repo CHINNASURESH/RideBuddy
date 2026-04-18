@@ -90,8 +90,11 @@ fun MapScreen(
     // Combine friends list and heading to correctly update the overlay without overwriting state
     LaunchedEffect(friends, heading) {
         val currentUserId = viewModel.currentUserId
+        // Pass local heading down so it can be picked up for SMS dispatches when offline
+        viewModel.updateHeading(heading)
+
         val newRiders = friends.map { user ->
-            val userHeading = if (user.userId == currentUserId) heading else null
+            val userHeading = if (user.userId == currentUserId) heading else user.heading
             Rider(user.userId, user.position, android.graphics.Color.RED, userHeading, user.status)
         }
         ridersOverlay.setRiders(newRiders)
