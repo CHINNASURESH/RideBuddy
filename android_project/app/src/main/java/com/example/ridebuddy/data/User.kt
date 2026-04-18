@@ -8,5 +8,6 @@ data class User(
     val longitude: Double = 0.0,
     val lastUpdated: Timestamp? = null,
     val isSharing: Boolean = false,
-    val sharingExpiry: Long = 0L // Timestamp in millis
+    val sharingExpiry: Long = 0L, // Timestamp in millis
+    val status: String? = null // e.g. "Need Gas", "Pulled Over", "Hazard Ahead"
 )

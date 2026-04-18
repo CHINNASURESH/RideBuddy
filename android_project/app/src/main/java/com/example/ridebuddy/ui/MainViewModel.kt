@@ -53,11 +53,23 @@ class MainViewModel @Inject constructor(
                 UserUiModel(
                     userId = user.userId,
                     position = LatLong(user.latitude, user.longitude),
-                    lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}"
+                    lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}",
+                    status = user.status
                 )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setStatus(status: String?) {
+        viewModelScope.launch {
+            try {
+                val currentUserId = authRepository.getUserId()
+                repository.updateUserStatus("default_group", currentUserId, status)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     fun startSharing(durationHours: Int, intervalMinutes: Int) {
         viewModelScope.launch {
