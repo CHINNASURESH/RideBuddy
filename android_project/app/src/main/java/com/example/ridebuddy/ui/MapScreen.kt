@@ -32,6 +32,9 @@ fun MapScreen(
     val friends by viewModel.activeFriends.collectAsState()
     val context = LocalContext.current
 
+    val compassManager = remember { CompassManager(context) }
+    val heading by compassManager.heading.collectAsState()
+
     // Permissions
     val permissions = mutableListOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -43,6 +46,13 @@ fun MapScreen(
     }
 
     val permissionsState = rememberMultiplePermissionsState(permissions = permissions)
+
+    DisposableEffect(permissionsState.allPermissionsGranted) {
+        compassManager.start()
+        onDispose {
+            compassManager.stop()
+        }
+    }
 
     // UI State for selections
     var selectedDuration by remember { mutableStateOf(4) } // Hours
@@ -58,9 +68,12 @@ fun MapScreen(
         }
     }
 
-    LaunchedEffect(friends) {
+    // Combine friends list and heading to correctly update the overlay without overwriting state
+    LaunchedEffect(friends, heading) {
+        val currentUserId = viewModel.currentUserId
         val newRiders = friends.map { user ->
-            Rider(user.userId, user.position, android.graphics.Color.RED) // Using Red for group riders
+            val userHeading = if (user.userId == currentUserId) heading else null
+            Rider(user.userId, user.position, android.graphics.Color.RED, userHeading)
         }
         ridersOverlay.setRiders(newRiders)
     }
@@ -79,7 +92,8 @@ fun MapScreen(
                 }
             },
             update = { mapView ->
-                // MapView updates handled by LaunchedEffect on ridersOverlay
+                // Mapsforge v0.20 MapViewPosition does not natively support setBearing/bearing API.
+                // We fallback to Plan B: map remains North-Up, and we rotate the puck (rider overlay).
             }
         )
 

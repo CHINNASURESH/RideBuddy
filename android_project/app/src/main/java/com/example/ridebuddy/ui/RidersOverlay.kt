@@ -10,7 +10,7 @@ import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 import org.mapsforge.map.layer.Layer
 import java.util.concurrent.ConcurrentHashMap
 
-data class Rider(val id: String, var position: LatLong, val color: Int)
+data class Rider(val id: String, var position: LatLong, val color: Int, val heading: Float? = null)
 
 class RidersOverlay : Layer() {
 
@@ -25,6 +25,12 @@ class RidersOverlay : Layer() {
         setStyle(Style.STROKE)
         setStrokeWidth(2f)
         setColor(android.graphics.Color.WHITE)
+    }
+
+    private val headingPaint: Paint = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+        setStyle(Style.STROKE)
+        setStrokeWidth(4f)
+        setColor(android.graphics.Color.BLACK)
     }
 
     fun updateRider(rider: Rider) {
@@ -64,6 +70,18 @@ class RidersOverlay : Layer() {
                 val radius = 10
                 canvas.drawCircle(pixelX.toInt(), pixelY.toInt(), radius, paint)
                 canvas.drawCircle(pixelX.toInt(), pixelY.toInt(), radius, strokePaint)
+
+                // Draw a heading indicator (a line pointing in the direction of the heading)
+                val headingToUse = rider.heading
+
+                if (headingToUse != null) {
+                    val angleRad = Math.toRadians((headingToUse - 90f).toDouble()) // Subtract 90 to make 0 point "up"
+                    val lineLength = 20
+                    val endX = pixelX + (Math.cos(angleRad) * lineLength).toInt()
+                    val endY = pixelY + (Math.sin(angleRad) * lineLength).toInt()
+
+                    canvas.drawLine(pixelX.toInt(), pixelY.toInt(), endX.toInt(), endY.toInt(), headingPaint)
+                }
             }
         }
     }
