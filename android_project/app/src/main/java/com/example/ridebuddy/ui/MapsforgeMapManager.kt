@@ -18,6 +18,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
 
     private var tileRendererLayer: TileRendererLayer? = null
     private var routePolyline: Polyline? = null
+    private var importedRoutePolyline: Polyline? = null
 
     init {
         // Initialize Mapsforge graphic factory if not already initialized
@@ -76,6 +77,34 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
 
         mapView.layerManager.layers.add(polyline)
         routePolyline = polyline
+    }
+
+    fun drawImportedRoute(routePoints: List<LatLong>, color: Int = android.graphics.Color.MAGENTA, strokeWidth: Float = 10f) {
+        // Remove existing imported route if any
+        importedRoutePolyline?.let {
+            mapView.layerManager.layers.remove(it)
+        }
+
+        val paint = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+            setColor(color)
+            setStrokeWidth(strokeWidth)
+            setStyle(Style.STROKE)
+            setDashPathEffect(floatArrayOf(20f, 20f))
+        }
+
+        val polyline = Polyline(paint, AndroidGraphicFactory.INSTANCE)
+        val latLongs = polyline.latLongs
+        for (point in routePoints) {
+            latLongs.add(point)
+        }
+
+        mapView.layerManager.layers.add(polyline)
+        importedRoutePolyline = polyline
+
+        // Optionally center map on the first point of the route
+        if (routePoints.isNotEmpty()) {
+            mapView.model.mapViewPosition.center = routePoints.first()
+        }
     }
 
     fun cleanUp() {
