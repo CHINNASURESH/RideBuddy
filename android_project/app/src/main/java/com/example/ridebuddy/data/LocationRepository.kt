@@ -79,6 +79,31 @@ class LocationRepository @Inject constructor(
             .await()
     }
 
+
+    suspend fun submitBetaFeedback(
+        userId: String,
+        category: String,
+        details: String,
+        batteryPct: Int,
+        isOnline: Boolean,
+        waypoints: List<Map<String, Double>>,
+        lat: Double?,
+        lon: Double?
+    ) {
+        val payload = mapOf(
+            "userId" to userId,
+            "category" to category,
+            "details" to details,
+            "batteryPct" to batteryPct,
+            "isOnline" to isOnline,
+            "waypoints" to waypoints,
+            "latitude" to lat,
+            "longitude" to lon,
+            "timestamp" to com.google.firebase.Timestamp.now()
+        )
+        firestore.collection("BetaFeedback").add(payload).await()
+    }
+
     fun listenToUserEntitlements(userId: String) {
         firestore.collection("users").document(userId)
             .addSnapshotListener { snapshot, _ ->

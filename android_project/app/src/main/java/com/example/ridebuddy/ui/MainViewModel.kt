@@ -39,7 +39,7 @@ class MainViewModel @Inject constructor(
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
 
-    val isPro: StateFlow<Boolean> = repository.isProActive.asStateFlow()
+    val isPro: StateFlow<Boolean> = repository.isProActive
 
     private val _isRecording = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording
@@ -65,6 +65,42 @@ class MainViewModel @Inject constructor(
             try {
                 val currentUserId = authRepository.getUserId()
                 repository.listenToUserEntitlements(currentUserId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    fun submitFeedback(category: String, details: String) {
+        viewModelScope.launch {
+            try {
+                // Get battery state
+                val batteryIntent = application.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+                val batteryPct = if (scale > 0) level * 100 / scale else -1
+
+                // Get network state
+                val isOnlineState = isOnline.value
+
+                // Get routing waypoints
+                val waypoints = routingStateManager.routingState.value.waypoints.map { mapOf("lat" to it.latitude, "lon" to it.longitude) }
+
+                // Get location (for now we check the activeFriends list to find our own location if shared, or we can just pass null if not immediately available. However, a better way is to pass current location from MapScreen if available. Let's add it to the MainViewModel state if we can, or just grab the last known location from the service)
+                // Actually, the app tracks location via LocationService. We don't have a direct hook here. Let's see if we can get it from activeFriends.
+                val currentUserLocation = activeFriends.value.find { it.userId == currentUserId }?.position
+
+                repository.submitBetaFeedback(
+                    userId = currentUserId,
+                    category = category,
+                    details = details,
+                    batteryPct = batteryPct,
+                    isOnline = isOnlineState,
+                    waypoints = waypoints,
+                    lat = currentUserLocation?.latitude,
+                    lon = currentUserLocation?.longitude
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
