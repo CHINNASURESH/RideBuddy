@@ -1,4 +1,6 @@
 import java.util.Properties
+import java.util.Date
+import java.text.SimpleDateFormat
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,6 +19,10 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+val buildTime = Date()
+val computedVersionCode = SimpleDateFormat("yyMMddHH").format(buildTime).toInt()
+val computedVersionName = "1.0.${SimpleDateFormat("yyMMddHH").format(buildTime)}"
+
 android {
 
     namespace = "com.example.ridebuddy"
@@ -26,16 +32,26 @@ android {
         applicationId = "com.example.ridebuddy"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = computedVersionCode
+        versionName = computedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(localProperties.getProperty("STORE_FILE", System.getenv("STORE_FILE") ?: "keystore.jks"))
+            storePassword = localProperties.getProperty("STORE_PASSWORD", System.getenv("STORE_PASSWORD") ?: "")
+            keyAlias = localProperties.getProperty("KEY_ALIAS", System.getenv("KEY_ALIAS") ?: "")
+            keyPassword = localProperties.getProperty("KEY_PASSWORD", System.getenv("KEY_PASSWORD") ?: "")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
