@@ -64,6 +64,7 @@ fun MapScreen(
     val altitude by compassManager.altitude.collectAsState()
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
+    var showFeedbackDialog by remember { mutableStateOf(false) }
     val isOnline by viewModel.isOnline.collectAsState()
 
     val isPro by viewModel.isPro.collectAsState()
@@ -282,11 +283,21 @@ fun MapScreen(
 
         // Rider Dashboard
         if (routingState.isRoutingActive) {
+            if (showFeedbackDialog) {
+                FeedbackDialog(
+                    onDismiss = { showFeedbackDialog = false },
+                    onSubmit = { category, details ->
+                        viewModel.submitFeedback(category, details)
+                        showFeedbackDialog = false
+                    }
+                )
+            }
             RiderDashboard(
                 speedMps = speedMps,
                 altitudeMeters = altitude,
                 distanceToDestinationMeters = routingState.distanceToDestination,
                 etaMillis = routingState.expectedArrivalTime,
+                onFeedbackClick = { showFeedbackDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)

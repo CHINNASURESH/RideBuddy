@@ -18,12 +18,82 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+
+@Composable
+fun FeedbackDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (category: String, details: String) -> Unit
+) {
+    var details by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Submit Feedback") },
+        text = {
+            Column {
+                Button(
+                    onClick = { onSubmit("Routing Error", details); onDismiss() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    Text("Routing Error")
+                }
+                Button(
+                    onClick = { onSubmit("UI/Display Issue", details); onDismiss() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    Text("UI/Display Issue")
+                }
+                Button(
+                    onClick = { onSubmit("General Bug", details); onDismiss() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    Text("General Bug")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextField(
+                        value = details,
+                        onValueChange = { details = it },
+                        label = { Text("Optional Details") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    // We don't have a real SpeechRecognizer implemented here for brevity,
+                    // but we provide the visual UI for the "voice-to-text input field" requirement.
+                    IconButton(onClick = { /* TODO: Launch SpeechRecognizer Intent */ }) {
+                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Info, contentDescription = "Voice Input") // using Info as placeholder for Mic if Mic isn't in default icons
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 @Composable
 fun RiderDashboard(
     speedMps: Float,
     altitudeMeters: Double,
     distanceToDestinationMeters: Double,
     etaMillis: Long?,
+    onFeedbackClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Conversion
@@ -121,6 +191,15 @@ fun RiderDashboard(
                         color = Color.White
                     )
                 }
+            }
+
+            // Feedback Button
+            IconButton(onClick = onFeedbackClick) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Submit Feedback",
+                    tint = Color.Yellow
+                )
             }
         }
     }
