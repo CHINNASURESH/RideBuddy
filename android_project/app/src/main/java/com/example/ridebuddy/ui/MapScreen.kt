@@ -416,7 +416,10 @@ fun MapScreen(
 
                     if (!isPro) {
                         Button(
-                            onClick = { showProDialog.value = true },
+                            onClick = {
+                                viewModel.logProUpgradeView()
+                                showProDialog.value = true
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Unlock Ridebuddy Pro")
@@ -526,6 +529,7 @@ fun MapScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
+                            viewModel.logProSubscribeTap()
                             findActivity(context)?.let { activity ->
                                 viewModel.launchBillingFlow(activity) { _ -> }
                                 showProDialog.value = false
