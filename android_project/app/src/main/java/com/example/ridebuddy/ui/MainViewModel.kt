@@ -80,6 +80,20 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun shareLatestRide(context: android.content.Context) {
+        viewModelScope.launch {
+            val session = rideDao.getLastSession()
+            if (session != null) {
+                val points = rideDao.getPointsForSession(session.id)
+                val intent = com.example.ridebuddy.util.GpxExporter.createShareIntent(context, session, points)
+                if (intent != null) {
+                    val chooser = Intent.createChooser(intent, "Share GPX Ride")
+                    context.startActivity(chooser)
+                }
+            }
+        }
+    }
+
 
     fun submitFeedback(category: String, details: String) {
         viewModelScope.launch {
