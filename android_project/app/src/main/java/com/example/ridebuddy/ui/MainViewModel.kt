@@ -24,6 +24,7 @@ import com.example.ridebuddy.routing.RoutingState
 import com.example.ridebuddy.routing.TtsHelper
 import com.example.ridebuddy.network.NetworkMonitor
 import com.example.ridebuddy.billing.BillingManager
+import com.example.ridebuddy.util.RemoteConfigManager
 import com.example.ridebuddy.util.SmartReviewManager
 import com.example.ridebuddy.util.getActivity
 
@@ -37,10 +38,14 @@ class MainViewModel @Inject constructor(
     networkMonitor: NetworkMonitor,
     private val rideDao: com.example.ridebuddy.data.local.RideDao,
     private val billingManager: BillingManager,
-    private val smartReviewManager: SmartReviewManager
+    private val smartReviewManager: SmartReviewManager,
+    private val remoteConfigManager: RemoteConfigManager
 ) : ViewModel() {
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
+
+    val isSmsFallbackEnabled: StateFlow<Boolean> = remoteConfigManager.isSmsFallbackEnabled
+    val isSolarTelemetryEnabled: StateFlow<Boolean> = remoteConfigManager.isSolarTelemetryEnabled
 
     val isPro: StateFlow<Boolean> = repository.isProActive
 

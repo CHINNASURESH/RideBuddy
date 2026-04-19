@@ -103,6 +103,7 @@ fun MapScreen(
     var isSharing by remember { mutableStateOf(false) }
     var showProDialog = remember { mutableStateOf(false) }
 
+    val isSolarTelemetryEnabled by viewModel.isSolarTelemetryEnabled.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
 
     val ridersOverlay = remember { RidersOverlay() }
@@ -121,7 +122,7 @@ fun MapScreen(
     }
 
     LaunchedEffect(routingState.destinationSunsetTime, currentTime) {
-        val sunsetTime = routingState.destinationSunsetTime
+        val sunsetTime = if (isSolarTelemetryEnabled) routingState.destinationSunsetTime else null
         if (sunsetTime != null) {
             val isNightMode = currentTime > sunsetTime
             mapManager?.setNightMode(isNightMode)
@@ -283,7 +284,7 @@ fun MapScreen(
         }
 
         // Night Riding Warning Overlay
-        if (routingState.isRoutingActive && routingState.isNightRidingAnticipated && !DEBUG_ASO_MODE) {
+        if (isSolarTelemetryEnabled && routingState.isRoutingActive && routingState.isNightRidingAnticipated && !DEBUG_ASO_MODE) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -329,7 +330,8 @@ fun MapScreen(
                 onFeedbackClick = { showFeedbackDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                isSolarTelemetryEnabled = isSolarTelemetryEnabled
             )
         } else if (!DEBUG_ASO_MODE) {
             // Control Panel

@@ -15,6 +15,7 @@ import com.example.ridebuddy.data.LocationRepository
 import com.example.ridebuddy.network.NetworkMonitor
 import com.example.ridebuddy.routing.RoutingStateManager
 import com.example.ridebuddy.sms.SmsDispatcher
+import com.example.ridebuddy.util.RemoteConfigManager
 import com.example.ridebuddy.billing.BillingManager
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +39,9 @@ class LocationService : Service() {
 
     @Inject
     lateinit var smsDispatcher: SmsDispatcher
+
+    @Inject
+    lateinit var remoteConfigManager: RemoteConfigManager
 
     @Inject
     lateinit var networkMonitor: NetworkMonitor
@@ -116,7 +120,7 @@ class LocationService : Service() {
                             delay(3 * 60 * 1000L)
 
                             // Only dispatch if we are offline and have a valid location
-                            if (!networkMonitor.isOnline.value && repository.isProActive.value) {
+                            if (remoteConfigManager.isSmsFallbackEnabled.value && !networkMonitor.isOnline.value && repository.isProActive.value) {
                                 lastUploadedLocation?.let { loc ->
                                     userId?.let { uid ->
                                         val heading = repository.localUserHeading.value

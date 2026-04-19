@@ -13,6 +13,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.ridebuddy.data.local.AppDatabase
 import com.example.ridebuddy.data.local.RideDao
+import com.example.ridebuddy.util.RemoteConfigManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 
@@ -46,5 +47,11 @@ object AppModule {
     @Singleton
     fun provideRideDao(appDatabase: AppDatabase): RideDao {
         return appDatabase.rideDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRemoteConfigManager(): RemoteConfigManager {
+        return RemoteConfigManager()
     }
 }

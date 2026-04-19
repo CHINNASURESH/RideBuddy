@@ -1,0 +1,10 @@
+--- LocationService.kt
++++ LocationService.kt
+@@ -28,6 +28,7 @@
+ import com.example.ridebuddy.routing.RoutingStateManager
+ import com.example.ridebuddy.routing.RoutingState
+ import com.example.ridebuddy.network.NetworkMonitor
++import com.example.ridebuddy.util.RemoteConfigManager
+ import dagger.hilt.android.AndroidEntryPoint
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.Dispatchers
