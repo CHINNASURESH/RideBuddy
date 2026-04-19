@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Menu
 import com.example.ridebuddy.data.User
 import org.mapsforge.map.android.view.MapView
 import androidx.compose.ui.viewinterop.AndroidView
@@ -39,6 +40,8 @@ import com.example.ridebuddy.routing.RoutingState
 import org.mapsforge.core.graphics.Color
 import org.mapsforge.core.model.LatLong
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 
 fun findActivity(context: android.content.Context): android.app.Activity? {
     var currentContext = context
@@ -68,6 +71,8 @@ fun MapScreen(
     val isOnline by viewModel.isOnline.collectAsState()
 
     val isPro by viewModel.isPro.collectAsState()
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     // Announce new turns
     LaunchedEffect(routingState.currentInstructionIndex) {
@@ -202,6 +207,24 @@ fun MapScreen(
 
     val DEBUG_ASO_MODE = true
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Spacer(Modifier.height(16.dp))
+                NavigationDrawerItem(
+                    label = { Text("Community Board") },
+                    selected = false,
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.com/invite/ridebuddy"))
+                        context.startActivity(intent)
+                        coroutineScope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+            }
+        }
+    ) {
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -243,6 +266,13 @@ fun MapScreen(
                 // Night mode is handled by the LaunchedEffect, which updates mapManager safely.
             }
         )
+
+        IconButton(
+            onClick = { coroutineScope.launch { drawerState.open() } },
+            modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
+        ) {
+            Icon(Icons.Filled.Menu, contentDescription = "Menu")
+        }
 
         // Network Status Overlay
         if (!isOnline && !DEBUG_ASO_MODE) {
@@ -458,6 +488,15 @@ fun MapScreen(
                         ) {
                             Text("Export Last Ride GPX")
                         }
+
+                        Button(
+                            onClick = {
+                                viewModel.shareLatestRide(context)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Share Last Ride GPX")
+                        }
                     }
                 }
             }
@@ -543,6 +582,7 @@ fun MapScreen(
                 }
             }
         }
+    }
     }
 }
 

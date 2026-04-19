@@ -14,6 +14,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import android.content.Intent
+import androidx.core.content.FileProvider
+import java.io.File
 
 object GpxExporter {
     suspend fun exportRideSession(
@@ -92,5 +95,38 @@ object GpxExporter {
         stringBuilder.append("</gpx>\n")
 
         return stringBuilder.toString()
+    }
+
+    suspend fun createShareIntent(
+        context: Context,
+        session: RideSession,
+        points: List<RidePoint>
+    ): Intent? = withContext(Dispatchers.IO) {
+        if (points.isEmpty()) return@withContext null
+
+        val gpxContent = buildGpxContent(session, points)
+        val fileName = "RideBuddy_Session_${session.id}_${System.currentTimeMillis()}.gpx"
+
+        try {
+            val cachePath = File(context.cacheDir, "gpx_exports")
+            cachePath.mkdirs()
+            val file = File(cachePath, fileName)
+
+            file.outputStream().use { outputStream ->
+                outputStream.write(gpxContent.toByteArray(Charsets.UTF_8))
+            }
+
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/gpx+xml"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            intent
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
