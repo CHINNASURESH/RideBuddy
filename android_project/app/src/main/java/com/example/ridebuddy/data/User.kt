@@ -11,5 +11,5 @@ data class User(
     val isSharing: Boolean = false,
     val sharingExpiry: Long = 0L, // Timestamp in millis
     val status: String? = null, // e.g. "Need Gas", "Pulled Over", "Hazard Ahead"
-    val isPro: Boolean = false
+    val isProActive: Boolean = false
 )

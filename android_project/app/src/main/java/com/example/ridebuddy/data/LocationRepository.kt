@@ -22,6 +22,8 @@ class LocationRepository @Inject constructor(
     val localUserStatus = MutableStateFlow<String?>(null)
     val localUserHeading = MutableStateFlow(0f)
 
+    val isProActive = MutableStateFlow(false)
+
     // Local state to track updates received via SMS when offline
     private val offlineRiders = MutableStateFlow<Map<String, User>>(emptyMap())
 
@@ -77,10 +79,19 @@ class LocationRepository @Inject constructor(
             .await()
     }
 
+    fun listenToUserEntitlements(userId: String) {
+        firestore.collection("users").document(userId)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null && snapshot.exists()) {
+                    isProActive.value = snapshot.getBoolean("isProActive") ?: false
+                }
+            }
+    }
+
     // Update current user's pro status globally
-    suspend fun updateUserProStatus(userId: String, isPro: Boolean) {
+    suspend fun updateUserProStatus(userId: String, isProActive: Boolean) {
          firestore.collection("users").document(userId)
-            .set(mapOf("isPro" to isPro), SetOptions.merge())
+            .set(mapOf("isProActive" to isProActive), SetOptions.merge())
             .await()
     }
 

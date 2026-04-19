@@ -4,6 +4,9 @@ import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.*
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.ktx.functions
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,7 +51,7 @@ class BillingManager @Inject constructor(
         }
 
         val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.INAPP)
+            .setProductType(BillingClient.ProductType.SUBS)
             .build()
 
         billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
@@ -69,7 +72,7 @@ class BillingManager @Inject constructor(
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId("ridebuddy_pro")
-                .setProductType(BillingClient.ProductType.INAPP)
+                .setProductType(BillingClient.ProductType.SUBS)
                 .build()
         )
 
@@ -78,11 +81,17 @@ class BillingManager @Inject constructor(
         billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && productDetailsList.isNotEmpty()) {
                 val productDetails = productDetailsList[0]
-                val productDetailsParamsList = listOf(
-                    BillingFlowParams.ProductDetailsParams.newBuilder()
-                        .setProductDetails(productDetails)
-                        .build()
-                )
+
+                val offerToken = productDetails.subscriptionOfferDetails?.get(0)?.offerToken
+
+                val productDetailsParamsList = if (offerToken != null) {
+                    listOf(
+                        BillingFlowParams.ProductDetailsParams.newBuilder()
+                            .setProductDetails(productDetails)
+                            .setOfferToken(offerToken)
+                            .build()
+                    )
+                } else return@queryProductDetailsAsync
 
                 val billingFlowParams = BillingFlowParams.newBuilder()
                     .setProductDetailsParamsList(productDetailsParamsList)
@@ -108,18 +117,22 @@ class BillingManager @Inject constructor(
 
     private fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-            if (!purchase.isAcknowledged) {
-                val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
-                    .setPurchaseToken(purchase.purchaseToken)
-                    .build()
-                billingClient.acknowledgePurchase(acknowledgePurchaseParams) { billingResult ->
-                    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                        _isPro.value = true
+            val data = hashMapOf(
+                "purchaseToken" to purchase.purchaseToken,
+                "productId" to purchase.products[0]
+            )
+
+            // Call Cloud Function for server-side verification.
+            // The Cloud Function will verify, acknowledge the purchase, and update the user's Firestore doc.
+            Firebase.functions.getHttpsCallable("verifySubscription")
+                .call(data)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        // The server will update Firestore, and our listener will pick up the 'isProActive' change.
+                    } else {
+                        // Handle error (e.g., show message to user)
                     }
                 }
-            } else {
-                _isPro.value = true
-            }
         }
     }
 }
