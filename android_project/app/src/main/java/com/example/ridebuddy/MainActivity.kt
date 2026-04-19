@@ -9,6 +9,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import android.annotation.SuppressLint
 import com.example.ridebuddy.ui.MapScreen
 import com.example.ridebuddy.ui.MainViewModel
 import androidx.activity.viewModels
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val handledCodes = listOf(
             KeyEvent.KEYCODE_DPAD_UP,

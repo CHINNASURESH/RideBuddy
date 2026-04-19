@@ -109,6 +109,8 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.functions)
     implementation(libs.firebase.config)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.analytics)
 
     // Hilt
     implementation(libs.hilt.android)

@@ -38,6 +38,7 @@ class MainViewModel @Inject constructor(
     networkMonitor: NetworkMonitor,
     private val rideDao: com.example.ridebuddy.data.local.RideDao,
     private val billingManager: BillingManager,
+    private val analyticsManager: com.example.ridebuddy.util.AnalyticsManager,
     private val smartReviewManager: SmartReviewManager,
     private val remoteConfigManager: RemoteConfigManager
 ) : ViewModel() {
@@ -190,6 +191,14 @@ class MainViewModel @Inject constructor(
                 e.printStackTrace()
             }
         }
+    }
+
+    fun logProUpgradeView() {
+        analyticsManager.logProUpgradeView()
+    }
+
+    fun logProSubscribeTap() {
+        analyticsManager.logProSubscribeTap()
     }
 
     fun launchBillingFlow(activity: Activity, onComplete: (Boolean) -> Unit) {

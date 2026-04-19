@@ -1,0 +1,14 @@
+<<<<<<< SEARCH
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+=======
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import android.annotation.SuppressLint
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+=======
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+>>>>>>> REPLACE
