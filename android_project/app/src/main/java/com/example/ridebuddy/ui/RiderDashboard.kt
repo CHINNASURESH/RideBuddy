@@ -94,14 +94,15 @@ fun RiderDashboard(
     distanceToDestinationMeters: Double,
     etaMillis: Long?,
     onFeedbackClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSolarTelemetryEnabled: Boolean = true
 ) {
     // Conversion
     val speedKmh = speedMps * 3.6f
 
     // Formatting
     val speedText = String.format(Locale.getDefault(), "%.0f", speedKmh)
-    val altitudeText = String.format(Locale.getDefault(), "%.0fm", altitudeMeters)
+    val altitudeText = if (isSolarTelemetryEnabled) String.format(Locale.getDefault(), "%.0fm", altitudeMeters) else "---"
     val distanceText = if (distanceToDestinationMeters < 1000) {
         String.format(Locale.getDefault(), "%.0f m", distanceToDestinationMeters)
     } else {

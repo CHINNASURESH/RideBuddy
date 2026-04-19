@@ -7,6 +7,7 @@ import android.provider.Telephony
 import android.util.Log
 import com.example.ridebuddy.data.LocationRepository
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.ridebuddy.util.RemoteConfigManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,8 +19,12 @@ class SmsReceiver : BroadcastReceiver() {
     @Inject
     lateinit var repository: LocationRepository
 
+    @Inject
+    lateinit var remoteConfigManager: RemoteConfigManager
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
+            if (!remoteConfigManager.isSmsFallbackEnabled.value) return
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
 
             for (message in messages) {
