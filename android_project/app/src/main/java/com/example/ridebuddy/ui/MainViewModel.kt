@@ -39,7 +39,7 @@ class MainViewModel @Inject constructor(
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
 
-    val isPro: StateFlow<Boolean> = billingManager.isPro
+    val isPro: StateFlow<Boolean> = repository.isProActive.asStateFlow()
 
     private val _isRecording = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording
@@ -60,19 +60,13 @@ class MainViewModel @Inject constructor(
     init {
         ttsHelper = TtsHelper(application)
 
-        // Collect isPro changes and update Firestore if we go pro
-        var previousProStatus = false
+        // Start listening to the permanent user document in Firestore to enable premium features
         viewModelScope.launch {
-            billingManager.isPro.collect { proStatus ->
-                if (proStatus && !previousProStatus) {
-                    try {
-                        val currentUserId = authRepository.getUserId()
-                        repository.updateUserProStatus(currentUserId, true)
-                        previousProStatus = true
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
+            try {
+                val currentUserId = authRepository.getUserId()
+                repository.listenToUserEntitlements(currentUserId)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

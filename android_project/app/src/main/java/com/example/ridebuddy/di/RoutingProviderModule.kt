@@ -1,7 +1,7 @@
 package com.example.ridebuddy.di
 
 import com.example.ridebuddy.routing.RoutingStateManager
-import com.example.ridebuddy.billing.BillingManager
+import com.example.ridebuddy.data.LocationRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,8 +13,8 @@ import javax.inject.Singleton
 object RoutingProviderModule {
     @Provides
     @Singleton
-    fun provideRoutingStateManager(billingManager: BillingManager): RoutingStateManager {
-        return RoutingStateManager(billingManager)
+    fun provideRoutingStateManager(repository: LocationRepository): RoutingStateManager {
+        return RoutingStateManager(repository)
     }
 
     @Provides

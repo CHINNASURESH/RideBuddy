@@ -116,7 +116,7 @@ class LocationService : Service() {
                             delay(3 * 60 * 1000L)
 
                             // Only dispatch if we are offline and have a valid location
-                            if (!networkMonitor.isOnline.value && billingManager.isPro.value) {
+                            if (!networkMonitor.isOnline.value && repository.isProActive.value) {
                                 lastUploadedLocation?.let { loc ->
                                     userId?.let { uid ->
                                         val heading = repository.localUserHeading.value

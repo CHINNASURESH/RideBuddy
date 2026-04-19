@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.functions)
 
     // Hilt
     implementation(libs.hilt.android)
