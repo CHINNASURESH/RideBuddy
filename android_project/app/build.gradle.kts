@@ -100,6 +100,7 @@ dependencies {
     implementation(libs.play.services.location)
 
     implementation(libs.play.billing)
+    implementation(libs.play.review.ktx)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
