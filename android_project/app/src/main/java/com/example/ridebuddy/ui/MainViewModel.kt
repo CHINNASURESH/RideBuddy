@@ -1,5 +1,6 @@
 package com.example.ridebuddy.ui
 
+import android.app.Activity
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.ViewModel
@@ -22,6 +23,7 @@ import com.example.ridebuddy.routing.RoutingStateManager
 import com.example.ridebuddy.routing.RoutingState
 import com.example.ridebuddy.routing.TtsHelper
 import com.example.ridebuddy.network.NetworkMonitor
+import com.example.ridebuddy.billing.BillingManager
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -31,10 +33,13 @@ class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val application: Application,
     networkMonitor: NetworkMonitor,
-    private val rideDao: com.example.ridebuddy.data.local.RideDao
+    private val rideDao: com.example.ridebuddy.data.local.RideDao,
+    private val billingManager: BillingManager
 ) : ViewModel() {
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
+
+    val isPro: StateFlow<Boolean> = billingManager.isPro
 
     private val _isRecording = kotlinx.coroutines.flow.MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording
@@ -54,6 +59,22 @@ class MainViewModel @Inject constructor(
 
     init {
         ttsHelper = TtsHelper(application)
+
+        // Collect isPro changes and update Firestore if we go pro
+        var previousProStatus = false
+        viewModelScope.launch {
+            billingManager.isPro.collect { proStatus ->
+                if (proStatus && !previousProStatus) {
+                    try {
+                        val currentUserId = authRepository.getUserId()
+                        repository.updateUserProStatus(currentUserId, true)
+                        previousProStatus = true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
     }
 
     override fun onCleared() {
@@ -130,6 +151,12 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    fun launchBillingFlow(activity: Activity, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            billingManager.launchBillingFlow(activity, onComplete)
         }
     }
 

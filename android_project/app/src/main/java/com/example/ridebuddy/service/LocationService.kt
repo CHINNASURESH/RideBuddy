@@ -15,6 +15,7 @@ import com.example.ridebuddy.data.LocationRepository
 import com.example.ridebuddy.network.NetworkMonitor
 import com.example.ridebuddy.routing.RoutingStateManager
 import com.example.ridebuddy.sms.SmsDispatcher
+import com.example.ridebuddy.billing.BillingManager
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -43,6 +44,9 @@ class LocationService : Service() {
 
     @Inject
     lateinit var rideDao: com.example.ridebuddy.data.local.RideDao
+
+    @Inject
+    lateinit var billingManager: BillingManager
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
@@ -112,7 +116,7 @@ class LocationService : Service() {
                             delay(3 * 60 * 1000L)
 
                             // Only dispatch if we are offline and have a valid location
-                            if (!networkMonitor.isOnline.value) {
+                            if (!networkMonitor.isOnline.value && billingManager.isPro.value) {
                                 lastUploadedLocation?.let { loc ->
                                     userId?.let { uid ->
                                         val heading = repository.localUserHeading.value

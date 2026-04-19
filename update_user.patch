@@ -1,0 +1,10 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/data/User.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/data/User.kt
+@@ -9,5 +9,6 @@
+     val lastUpdated: Timestamp? = null,
+     val isSharing: Boolean = false,
+     val sharingExpiry: Long = 0L, // Timestamp in millis
+-    val status: String? = null // e.g. "Need Gas", "Pulled Over", "Hazard Ahead"
++    val status: String? = null, // e.g. "Need Gas", "Pulled Over", "Hazard Ahead"
++    val isPro: Boolean = false
+ )

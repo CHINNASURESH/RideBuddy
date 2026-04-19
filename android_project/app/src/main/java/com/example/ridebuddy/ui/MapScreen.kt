@@ -38,6 +38,16 @@ import com.example.ridebuddy.data.offline.OfflineStorageManager
 import com.example.ridebuddy.routing.RoutingState
 import org.mapsforge.core.graphics.Color
 import org.mapsforge.core.model.LatLong
+import android.content.ContextWrapper
+
+fun findActivity(context: android.content.Context): android.app.Activity? {
+    var currentContext = context
+    while (currentContext is ContextWrapper) {
+        if (currentContext is android.app.Activity) return currentContext
+        currentContext = currentContext.baseContext
+    }
+    return null
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -55,6 +65,8 @@ fun MapScreen(
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
+
+    val isPro by viewModel.isPro.collectAsState()
 
     // Announce new turns
     LaunchedEffect(routingState.currentInstructionIndex) {
@@ -88,6 +100,7 @@ fun MapScreen(
     var selectedDuration by remember { mutableStateOf(4) } // Hours
     var selectedFrequency by remember { mutableStateOf(10) } // Minutes (0 = Live)
     var isSharing by remember { mutableStateOf(false) }
+    var showProDialog = remember { mutableStateOf(false) }
 
     val isRecording by viewModel.isRecording.collectAsState()
 
@@ -359,6 +372,15 @@ fun MapScreen(
                         }
                     }
 
+                    if (!isPro) {
+                        Button(
+                            onClick = { showProDialog.value = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Unlock Ridebuddy Pro")
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text("Record Ride:", style = MaterialTheme.typography.labelLarge)
@@ -447,6 +469,31 @@ fun MapScreen(
                     onClick = { showStatusMenu = !showStatusMenu },
                 ) {
                     Icon(if (showStatusMenu) Icons.Filled.Clear else Icons.Filled.Add, contentDescription = "Status Menu")
+                }
+            }
+        }
+
+        if (showProDialog.value) {
+            ModalBottomSheet(
+                onDismissRequest = { showProDialog.value = false }
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Ridebuddy Pro", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Unlock premium features like SMS Fallback Sync and Solar Telemetry.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            findActivity(context)?.let { activity ->
+                                viewModel.launchBillingFlow(activity) { _ -> }
+                                showProDialog.value = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Purchase Now")
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }

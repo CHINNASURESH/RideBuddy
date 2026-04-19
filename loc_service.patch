@@ -1,0 +1,29 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/service/LocationService.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/service/LocationService.kt
+@@ -16,6 +16,7 @@
+ import com.example.ridebuddy.network.NetworkMonitor
+ import com.example.ridebuddy.routing.RoutingStateManager
+ import com.example.ridebuddy.sms.SmsDispatcher
++import com.example.ridebuddy.billing.BillingManager
+ import com.google.android.gms.location.*
+ import dagger.hilt.android.AndroidEntryPoint
+ import kotlinx.coroutines.CoroutineScope
+@@ -45,6 +46,9 @@
+     @Inject
+     lateinit var rideDao: com.example.ridebuddy.data.local.RideDao
+
++    @Inject
++    lateinit var billingManager: BillingManager
++
+     private lateinit var fusedLocationClient: FusedLocationProviderClient
+     private lateinit var locationCallback: LocationCallback
+     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+@@ -194,7 +198,7 @@
+             serviceScope.launch {
+                 while (isActive) {
+                     delay(intervalMillis)
+-                    if (!networkMonitor.isOnline.value) {
++                    if (!networkMonitor.isOnline.value && billingManager.isPro.value) {
+                         // We are offline, try dispatching an SMS sync
+                         lastUploadedLocation?.let { loc ->
+                             userId?.let { uid ->

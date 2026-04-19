@@ -1,0 +1,18 @@
+--- android_project/app/src/main/java/com/example/ridebuddy/ui/MapScreen.kt
++++ android_project/app/src/main/java/com/example/ridebuddy/ui/MapScreen.kt
+@@ -37,6 +37,7 @@
+ import org.mapsforge.map.android.view.MapView
+ import androidx.compose.ui.viewinterop.AndroidView
+ import com.google.accompanist.permissions.ExperimentalPermissionsApi
+ import com.google.accompanist.permissions.rememberMultiplePermissionsState
+ import com.example.ridebuddy.data.offline.OfflineStorageManager
+ import com.example.ridebuddy.routing.RoutingState
+@@ -80,6 +81,8 @@
+     val altitude by compassManager.altitude.collectAsState()
+
+     val routingState by viewModel.routingStateManager.routingState.collectAsState()
+     val isOnline by viewModel.isOnline.collectAsState()
++
++    val isPro by viewModel.isPro.collectAsState()
+
+     // Announce new turns

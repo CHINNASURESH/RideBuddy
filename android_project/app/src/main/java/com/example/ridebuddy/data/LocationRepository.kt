@@ -77,6 +77,13 @@ class LocationRepository @Inject constructor(
             .await()
     }
 
+    // Update current user's pro status globally
+    suspend fun updateUserProStatus(userId: String, isPro: Boolean) {
+         firestore.collection("users").document(userId)
+            .set(mapOf("isPro" to isPro), SetOptions.merge())
+            .await()
+    }
+
     // Fetch friends who are sharing and not expired
     fun getActiveGroupRiders(groupId: String): Flow<List<User>> {
         val onlineRidersFlow = firestore.collection("groups").document(groupId).collection("riders")
