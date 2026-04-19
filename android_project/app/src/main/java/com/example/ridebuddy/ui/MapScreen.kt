@@ -199,6 +199,8 @@ fun MapScreen(
 
     var showStatusMenu by remember { mutableStateOf(false) }
 
+    val DEBUG_ASO_MODE = true
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -216,6 +218,21 @@ fun MapScreen(
                         newMapManager.loadMapFile(mapFile)
                     }
                     this.layerManager.layers.add(ridersOverlay)
+
+                    if (DEBUG_ASO_MODE) {
+                        newMapManager.setNightMode(true)
+                        val mockRoute = listOf(
+                            LatLong(46.5580, 12.0125), // Dolomite pass fake data
+                            LatLong(46.5600, 12.0150),
+                            LatLong(46.5650, 12.0160),
+                            LatLong(46.5700, 12.0180),
+                            LatLong(46.5750, 12.0140),
+                            LatLong(46.5800, 12.0100)
+                        )
+                        newMapManager.drawRoute(mockRoute, strokeWidth = 12f, color = android.graphics.Color.CYAN)
+                        newMapManager.setCenter(LatLong(46.5650, 12.0160))
+                        newMapManager.setZoomLevel(15.toByte())
+                    }
                 }
             },
             update = { mapView ->
@@ -227,7 +244,7 @@ fun MapScreen(
         )
 
         // Network Status Overlay
-        if (!isOnline) {
+        if (!isOnline && !DEBUG_ASO_MODE) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -245,16 +262,28 @@ fun MapScreen(
         }
 
         // Turn By Turn Overlay
-        if (routingState.isRoutingActive && routingState.currentInstruction != null) {
+        if ((routingState.isRoutingActive && routingState.currentInstruction != null) || DEBUG_ASO_MODE) {
+            val instruction = if (DEBUG_ASO_MODE) {
+                com.example.ridebuddy.routing.TurnInstruction(
+                    coordinate = LatLong(0.0, 0.0),
+                    command = 5, // TR
+                    message = "Turn right onto Passo di Giau",
+                    distanceToNext = 150.0,
+                    indexInTrack = 0
+                )
+            } else routingState.currentInstruction
+
+            val dist = if (DEBUG_ASO_MODE) 150.0 else routingState.distanceToNextInstruction
+
             TurnByTurnOverlay(
-                currentInstruction = routingState.currentInstruction,
-                distanceToNext = routingState.distanceToNextInstruction,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = if (!isOnline) 32.dp else 0.dp)
+                currentInstruction = instruction,
+                distanceToNext = dist,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = if (!isOnline && !DEBUG_ASO_MODE) 32.dp else 0.dp)
             )
         }
 
         // Night Riding Warning Overlay
-        if (routingState.isRoutingActive && routingState.isNightRidingAnticipated) {
+        if (routingState.isRoutingActive && routingState.isNightRidingAnticipated && !DEBUG_ASO_MODE) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -282,7 +311,7 @@ fun MapScreen(
         }
 
         // Rider Dashboard
-        if (routingState.isRoutingActive) {
+        if (routingState.isRoutingActive || DEBUG_ASO_MODE) {
             if (showFeedbackDialog) {
                 FeedbackDialog(
                     onDismiss = { showFeedbackDialog = false },
@@ -293,16 +322,16 @@ fun MapScreen(
                 )
             }
             RiderDashboard(
-                speedMps = speedMps,
-                altitudeMeters = altitude,
-                distanceToDestinationMeters = routingState.distanceToDestination,
-                etaMillis = routingState.expectedArrivalTime,
+                speedMps = if (DEBUG_ASO_MODE) 12.5f else speedMps, // 45 km/h
+                altitudeMeters = if (DEBUG_ASO_MODE) 2236.0 else altitude,
+                distanceToDestinationMeters = if (DEBUG_ASO_MODE) 12400.0 else routingState.distanceToDestination,
+                etaMillis = if (DEBUG_ASO_MODE) System.currentTimeMillis() + 1800000 else routingState.expectedArrivalTime,
                 onFeedbackClick = { showFeedbackDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp)
             )
-        } else {
+        } else if (!DEBUG_ASO_MODE) {
             // Control Panel
             Surface(
                 modifier = Modifier

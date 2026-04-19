@@ -191,4 +191,12 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         val center = mapView.model.mapViewPosition.center
         mapView.model.mapViewPosition.center = LatLong(center.latitude + dy, center.longitude + dx)
     }
+
+    fun setCenter(latLong: LatLong) {
+        mapView.model.mapViewPosition.center = latLong
+    }
+
+    fun setZoomLevel(zoom: Byte) {
+        mapView.model.mapViewPosition.zoomLevel = zoom
+    }
 }
