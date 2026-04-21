@@ -7,3 +7,4 @@ android_project/brouter-util/build/
 android_project/brouter-mapaccess/build/
 android_project/brouter-expressions/build/
 build/
+.gradle
