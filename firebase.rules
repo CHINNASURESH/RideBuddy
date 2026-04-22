@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow users to read and write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow group members to read/write riders within the group
+    match /groups/{groupId}/riders/{userId} {
+      // In a real app you'd want to check if the user is a member of the group,
+      // but keeping it simple for the beta version: require authentication.
+      // And allow users to write only to their own document
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow anyone authenticated to submit beta feedback
+    match /BetaFeedback/{document=**} {
+      allow create: if request.auth != null;
+      // Optionally allow them to read their own feedback, but for now just write
+      allow read: if false;
+      allow update, delete: if false;
+    }
+
+    // Default deny for everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
