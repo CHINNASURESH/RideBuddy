@@ -1,9 +1,0 @@
---- MapScreen.kt
-+++ MapScreen.kt
-@@ -107,6 +107,7 @@
-     val lastUserLocation by viewModel.lastUserLocation.collectAsState()
-     val heading by viewModel.heading.collectAsState()
-     val isOnline by viewModel.isOnline.collectAsState()
-+    val isSolarTelemetryEnabled by viewModel.isSolarTelemetryEnabled.collectAsState()
-     val isRecording by viewModel.isRecording.collectAsState()
-     val routingState by viewModel.routingState.collectAsState()
