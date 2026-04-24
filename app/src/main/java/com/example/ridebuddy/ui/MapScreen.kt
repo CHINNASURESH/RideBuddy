@@ -205,7 +205,7 @@ fun MapScreen(
 
     var showStatusMenu by remember { mutableStateOf(false) }
 
-    val DEBUG_ASO_MODE = true
+    val DEBUG_ASO_MODE = false
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -358,6 +358,11 @@ fun MapScreen(
                 distanceToDestinationMeters = if (DEBUG_ASO_MODE) 12400.0 else routingState.distanceToDestination,
                 etaMillis = if (DEBUG_ASO_MODE) System.currentTimeMillis() + 1800000 else routingState.expectedArrivalTime,
                 onFeedbackClick = { showFeedbackDialog = true },
+                onStopClick = {
+                    viewModel.routingStateManager.clearWaypoints()
+                    viewModel.routingStateManager.stopRouting()
+                    mapManager?.clearRouteAndWaypoints()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 16.dp),

@@ -25,12 +25,7 @@ class RemoteConfigManager @Inject constructor() {
             minimumFetchIntervalInSeconds = 3600 // 1 hour
         }
         remoteConfig.setConfigSettingsAsync(configSettings)
-        remoteConfig.setDefaultsAsync(
-            mapOf(
-                "is_sms_fallback_enabled" to true,
-                "is_solar_telemetry_enabled" to true
-            )
-        )
+        remoteConfig.setDefaultsAsync(com.example.ridebuddy.R.xml.remote_config_defaults)
 
         // Read synchronously what's already in the cache so we have it immediately available on cold-start
         _isSmsFallbackEnabled.value = remoteConfig.getBoolean("is_sms_fallback_enabled")
