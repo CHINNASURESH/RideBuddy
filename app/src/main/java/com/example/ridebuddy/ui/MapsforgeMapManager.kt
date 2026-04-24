@@ -151,6 +151,18 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
 
     private val waypointMarkers = mutableListOf<org.mapsforge.map.layer.overlay.Marker>()
 
+    fun clearRouteAndWaypoints() {
+        routePolyline?.let {
+            mapView.layerManager.layers.remove(it)
+            routePolyline = null
+        }
+        for (marker in waypointMarkers) {
+            mapView.layerManager.layers.remove(marker)
+        }
+        waypointMarkers.clear()
+        mapView.layerManager.redrawLayers()
+    }
+
     fun drawWaypoints(waypoints: List<LatLong>) {
         for (marker in waypointMarkers) {
             mapView.layerManager.layers.remove(marker)

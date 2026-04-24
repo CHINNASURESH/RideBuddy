@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 
@@ -94,6 +95,7 @@ fun RiderDashboard(
     distanceToDestinationMeters: Double,
     etaMillis: Long?,
     onFeedbackClick: () -> Unit = {},
+    onStopClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     isSolarTelemetryEnabled: Boolean = true
 ) {
@@ -194,13 +196,22 @@ fun RiderDashboard(
                 }
             }
 
-            // Feedback Button
-            IconButton(onClick = onFeedbackClick) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = "Submit Feedback",
-                    tint = Color.Yellow
-                )
+            // Actions
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onFeedbackClick) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Submit Feedback",
+                        tint = Color.Yellow
+                    )
+                }
+                IconButton(onClick = onStopClick) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Stop Routing",
+                        tint = Color.Red
+                    )
+                }
             }
         }
     }
