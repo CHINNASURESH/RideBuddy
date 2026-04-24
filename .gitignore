@@ -8,3 +8,6 @@ android_project/brouter-mapaccess/build/
 android_project/brouter-expressions/build/
 build/
 .gradle/
+# Google Services config
+app/google-services.json
+google-services.json
