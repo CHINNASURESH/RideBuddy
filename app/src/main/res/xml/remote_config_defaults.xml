@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>is_sms_fallback_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>is_solar_telemetry_enabled</key>
+        <value>true</value>
+    </entry>
+</defaultsMap>

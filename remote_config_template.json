@@ -1,0 +1,18 @@
+{
+  "parameters": {
+    "is_sms_fallback_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Enables or disables the SMS fallback feature.",
+      "valueType": "BOOLEAN"
+    },
+    "is_solar_telemetry_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Enables or disables the solar telemetry feature.",
+      "valueType": "BOOLEAN"
+    }
+  }
+}
