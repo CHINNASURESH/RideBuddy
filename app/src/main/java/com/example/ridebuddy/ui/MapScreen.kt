@@ -205,7 +205,7 @@ fun MapScreen(
 
     var showStatusMenu by remember { mutableStateOf(false) }
 
-    val DEBUG_ASO_MODE = true
+    val DEBUG_ASO_MODE = false
 
     ModalNavigationDrawer(
         drawerState = drawerState,
