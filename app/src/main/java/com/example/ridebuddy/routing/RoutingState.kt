@@ -11,7 +11,9 @@ data class RoutingState(
     val distanceToDestination: Double = 0.0,
     val isRoutingActive: Boolean = false,
     val expectedArrivalTime: Long? = null,
-    val destinationSunsetTime: Long? = null
+    val destinationSunsetTime: Long? = null,
+    val totalDistance: Int = 0,
+    val totalSeconds: Int = 0
 ) {
     val currentInstruction: TurnInstruction?
         get() = turnInstructions.getOrNull(currentInstructionIndex)

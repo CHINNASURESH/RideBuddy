@@ -67,7 +67,8 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
                 }
             }
             val totalSeconds = track.totalSeconds
-            return RoutingResult(result, instructions, totalSeconds)
+            val totalDistance = track.distance
+            return RoutingResult(result, instructions, totalSeconds, totalDistance)
         }
 
         return RoutingResult(emptyList(), emptyList())

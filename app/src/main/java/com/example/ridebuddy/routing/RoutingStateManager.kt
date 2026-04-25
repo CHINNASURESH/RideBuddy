@@ -60,7 +60,9 @@ class RoutingStateManager(
             distanceToDestination = 0.0,
             isRoutingActive = true,
             expectedArrivalTime = expectedArrival,
-            destinationSunsetTime = sunsetTime
+            destinationSunsetTime = sunsetTime,
+            totalDistance = result.totalDistance,
+            totalSeconds = result.totalSeconds
         )
     }
 
