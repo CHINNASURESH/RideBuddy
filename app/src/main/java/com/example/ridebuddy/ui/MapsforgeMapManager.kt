@@ -9,6 +9,7 @@ import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 import org.mapsforge.map.android.util.AndroidUtil
 import org.mapsforge.map.android.view.MapView
 import org.mapsforge.map.layer.overlay.Polyline
+import org.mapsforge.map.layer.overlay.Circle
 import org.mapsforge.map.layer.renderer.TileRendererLayer
 import org.mapsforge.map.reader.MapFile
 import org.mapsforge.map.rendertheme.InternalRenderTheme
@@ -24,6 +25,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     private var tileRendererLayer: TileRendererLayer? = null
     private var routePolyline: Polyline? = null
     private var importedRoutePolyline: Polyline? = null
+    private var userLocationCircle: Circle? = null
 
     private var currentNightMode: Boolean = false
 
@@ -89,6 +91,28 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
             tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
         }
         mapView.layerManager.redrawLayers()
+    }
+
+    fun updateUserLocation(latLong: LatLong) {
+        val circle = userLocationCircle
+        if (circle != null) {
+            circle.latLong = latLong
+            mapView.layerManager.redrawLayers()
+        } else {
+            val paintFill = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+                setColor(android.graphics.Color.BLUE)
+                setStyle(Style.FILL)
+            }
+            val paintStroke = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+                setColor(android.graphics.Color.WHITE)
+                setStyle(Style.STROKE)
+                setStrokeWidth(3f)
+            }
+
+            val newCircle = Circle(latLong, 10f, paintFill, paintStroke)
+            mapView.layerManager.layers.add(newCircle)
+            userLocationCircle = newCircle
+        }
     }
 
     fun drawRoute(routePoints: List<LatLong>, color: Int = android.graphics.Color.BLUE, strokeWidth: Float = 10f) {

@@ -48,9 +48,12 @@ import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 @Composable
 fun MapsforgeMap(
     modifier: Modifier = Modifier,
+    currentLocation: android.location.Location? = null,
+    mapManager: MapsforgeMapManager? = null,
     onMapReady: (MapView) -> Unit
 ) {
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
+    var isFirstLocation by remember { mutableStateOf(true) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -68,7 +71,15 @@ fun MapsforgeMap(
             }
         },
         update = { mapView ->
-            // Update logic here if needed
+            if (currentLocation != null && mapManager != null) {
+                val latLong = LatLong(currentLocation.latitude, currentLocation.longitude)
+                mapManager.updateUserLocation(latLong)
+
+                if (isFirstLocation) {
+                    mapManager.setCenter(latLong)
+                    isFirstLocation = false
+                }
+            }
         }
     )
 }
@@ -103,6 +114,16 @@ fun MapScreen(
     val isPro by viewModel.isPro.collectAsState()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+    val locationTracker = remember { LocationTracker(context) }
+    val userLocation by locationTracker.location.collectAsState()
+
+    DisposableEffect(Unit) {
+        locationTracker.start()
+        onDispose {
+            locationTracker.stop()
+        }
+    }
 
     // Announce new turns
     LaunchedEffect(routingState.currentInstructionIndex) {
@@ -267,6 +288,8 @@ fun MapScreen(
 
         MapsforgeMap(
             modifier = Modifier.fillMaxSize(),
+            currentLocation = userLocation,
+            mapManager = mapManager,
             onMapReady = { mapView ->
                 val newMapManager = MapsforgeMapManager(mapView.context, mapView)
                 mapManager = newMapManager
