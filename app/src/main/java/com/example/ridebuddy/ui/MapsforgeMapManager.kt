@@ -69,9 +69,9 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
 
         mapView.layerManager.layers.add(tileRendererLayer)
 
-        mapView.model.mapViewPosition.center = LatLong(0.0, 0.0)
+        mapView.model.mapViewPosition.center = LatLong(52.5200, 13.4050)
 
-        mapView.model.mapViewPosition.zoomLevel = 12.toByte()
+        mapView.model.mapViewPosition.zoomLevel = 15.toByte()
     }
 
     fun setNightMode(isNightMode: Boolean) {
