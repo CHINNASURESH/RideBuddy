@@ -188,11 +188,28 @@ fun MapScreen(
         }
     }
 
+    // Announce route start
+    LaunchedEffect(routingState.isRoutingActive) {
+        if (routingState.isRoutingActive) {
+            viewModel.speakTurnInstruction("Navigation started, proceed to the route")
+        }
+    }
+
     // Announce new turns
     LaunchedEffect(routingState.currentInstructionIndex) {
         val instruction = routingState.currentInstruction
         if (instruction != null) {
             viewModel.speakTurnInstruction(instruction.message)
+        }
+    }
+
+    // Announce 500m warning
+    LaunchedEffect(routingState.announced500mInstructionIndex) {
+        if (routingState.announced500mInstructionIndex == routingState.currentInstructionIndex) {
+            val instruction = routingState.currentInstruction
+            if (instruction != null) {
+                viewModel.speakTurnInstruction("In 500 meters, ${instruction.message}")
+            }
         }
     }
 

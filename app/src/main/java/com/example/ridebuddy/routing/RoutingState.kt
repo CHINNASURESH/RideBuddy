@@ -13,7 +13,8 @@ data class RoutingState(
     val expectedArrivalTime: Long? = null,
     val destinationSunsetTime: Long? = null,
     val totalDistance: Int = 0,
-    val totalSeconds: Int = 0
+    val totalSeconds: Int = 0,
+    val announced500mInstructionIndex: Int = -1
 ) {
     val currentInstruction: TurnInstruction?
         get() = turnInstructions.getOrNull(currentInstructionIndex)

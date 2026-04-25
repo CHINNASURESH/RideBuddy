@@ -118,11 +118,17 @@ class RoutingStateManager(
                 }
             }
         } else {
-            // Just update the distance
+            // Just update the distance, and check if we crossed the 500m threshold
+            var newAnnounced500mIndex = state.announced500mInstructionIndex
+            if (distanceToNext < 500.0 && state.announced500mInstructionIndex < currentInstructionIndex) {
+                newAnnounced500mIndex = currentInstructionIndex
+            }
+
             _routingState.update {
                 it.copy(
                     distanceToNextInstruction = distanceToNext,
-                    distanceToDestination = distanceToDest
+                    distanceToDestination = distanceToDest,
+                    announced500mInstructionIndex = newAnnounced500mIndex
                 )
             }
         }
