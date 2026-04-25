@@ -28,7 +28,7 @@ class MockBRouterEngine : OfflineRoutingEngine {
                 }
                 route.add(destination)
             }
-            RoutingResult(route, emptyList())
+            RoutingResult(route, emptyList(), totalSeconds = 600, totalDistance = 5000)
         }
     }
 }
