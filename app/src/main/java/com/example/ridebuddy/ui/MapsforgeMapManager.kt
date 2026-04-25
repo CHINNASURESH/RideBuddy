@@ -40,9 +40,6 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
 
 
     init {
-        // Initialize Mapsforge graphic factory if not already initialized
-        AndroidGraphicFactory.createInstance(context.applicationContext)
-
         // Setup MapView basic properties
         mapView.isClickable = true
         mapView.mapScaleBar.isVisible = true

@@ -9,12 +9,16 @@ import android.net.NetworkRequest
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 
 @HiltAndroidApp
 class RideBuddyApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize Mapsforge graphic factory
+        AndroidGraphicFactory.createInstance(this)
 
         // Initialize Firebase
         FirebaseApp.initializeApp(this)

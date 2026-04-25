@@ -43,6 +43,36 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory
+
+@Composable
+fun MapsforgeMap(
+    modifier: Modifier = Modifier,
+    onMapReady: (MapView) -> Unit
+) {
+    var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mapViewInstance?.destroyAll()
+            AndroidGraphicFactory.clearResourceMemoryCache()
+        }
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            MapView(ctx).apply {
+                mapViewInstance = this
+                onMapReady(this)
+            }
+        },
+        update = { mapView ->
+            // Update logic here if needed
+        }
+    )
+}
+
 fun findActivity(context: android.content.Context): android.app.Activity? {
     var currentContext = context
     while (currentContext is ContextWrapper) {
@@ -226,44 +256,36 @@ fun MapScreen(
         }
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
+        MapsforgeMap(
             modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                MapView(ctx).apply {
-                    val newMapManager = MapsforgeMapManager(ctx, this)
-                    mapManager = newMapManager
-                    newMapManager.onMapLongPressListener = object : MapsforgeMapManager.OnMapLongPressListener {
-                        override fun onLongPress(latLong: LatLong) {
-                            viewModel.routingStateManager.addWaypoint(latLong)
-                        }
-                    }
-                    if (offlineStorageManager != null) {
-                        val mapFile = offlineStorageManager.getOfflineFile("germany.map")
-                        newMapManager.loadMapFile(mapFile)
-                    }
-                    this.layerManager.layers.add(ridersOverlay)
-
-                    if (DEBUG_ASO_MODE) {
-                        newMapManager.setNightMode(true)
-                        val mockRoute = listOf(
-                            LatLong(46.5580, 12.0125), // Dolomite pass fake data
-                            LatLong(46.5600, 12.0150),
-                            LatLong(46.5650, 12.0160),
-                            LatLong(46.5700, 12.0180),
-                            LatLong(46.5750, 12.0140),
-                            LatLong(46.5800, 12.0100)
-                        )
-                        newMapManager.drawRoute(mockRoute, strokeWidth = 12f, color = android.graphics.Color.CYAN)
-                        newMapManager.setCenter(LatLong(46.5650, 12.0160))
-                        newMapManager.setZoomLevel(15.toByte())
+            onMapReady = { mapView ->
+                val newMapManager = MapsforgeMapManager(mapView.context, mapView)
+                mapManager = newMapManager
+                newMapManager.onMapLongPressListener = object : MapsforgeMapManager.OnMapLongPressListener {
+                    override fun onLongPress(latLong: LatLong) {
+                        viewModel.routingStateManager.addWaypoint(latLong)
                     }
                 }
-            },
-            update = { mapView ->
-                // Mapsforge v0.20 MapViewPosition does not natively support setBearing/bearing API.
-                // We fallback to Plan B: map remains North-Up, and we rotate the puck (rider overlay).
+                if (offlineStorageManager != null) {
+                    val mapFile = offlineStorageManager.getOfflineFile("germany.map")
+                    newMapManager.loadMapFile(mapFile)
+                }
+                mapView.layerManager.layers.add(ridersOverlay)
 
-                // Night mode is handled by the LaunchedEffect, which updates mapManager safely.
+                if (DEBUG_ASO_MODE) {
+                    newMapManager.setNightMode(true)
+                    val mockRoute = listOf(
+                        LatLong(46.5580, 12.0125), // Dolomite pass fake data
+                        LatLong(46.5600, 12.0150),
+                        LatLong(46.5650, 12.0160),
+                        LatLong(46.5700, 12.0180),
+                        LatLong(46.5750, 12.0140),
+                        LatLong(46.5800, 12.0100)
+                    )
+                    newMapManager.drawRoute(mockRoute, strokeWidth = 12f, color = android.graphics.Color.CYAN)
+                    newMapManager.setCenter(LatLong(46.5650, 12.0160))
+                    newMapManager.setZoomLevel(15.toByte())
+                }
             }
         )
 
