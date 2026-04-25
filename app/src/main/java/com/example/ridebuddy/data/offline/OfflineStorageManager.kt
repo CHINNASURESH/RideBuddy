@@ -1,7 +1,11 @@
 package com.example.ridebuddy.data.offline
 
 import android.content.Context
+import com.example.ridebuddy.util.AssetExtractor
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,6 +22,20 @@ class OfflineStorageManager @Inject constructor(
             dir.mkdirs()
         }
         dir
+    }
+
+    private val _mapExtractionReady = MutableStateFlow(false)
+    val mapExtractionReady: StateFlow<Boolean> = _mapExtractionReady.asStateFlow()
+
+    /**
+     * Extracts a given file from assets to the offline data directory.
+     * Emits true to mapExtractionReady StateFlow on success.
+     */
+    suspend fun extractMapAsset(assetFileName: String) {
+        val success = AssetExtractor.extractAssetIfNeeded(context, assetFileName, offlineDataDir)
+        if (success) {
+            _mapExtractionReady.value = true
+        }
     }
 
     /**
