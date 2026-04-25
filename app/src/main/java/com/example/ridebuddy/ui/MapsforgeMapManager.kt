@@ -25,6 +25,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     private var tileRendererLayer: TileRendererLayer? = null
     private var routePolyline: Polyline? = null
     private var importedRoutePolyline: Polyline? = null
+    private var breadcrumbsPolyline: Polyline? = null
     private var userLocationCircle: Circle? = null
 
     private var currentNightMode: Boolean = false
@@ -94,24 +95,58 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     }
 
     fun updateUserLocation(latLong: LatLong) {
-        val circle = userLocationCircle
-        if (circle != null) {
-            circle.latLong = latLong
-            mapView.layerManager.redrawLayers()
-        } else {
-            val paintFill = AndroidGraphicFactory.INSTANCE.createPaint().apply {
-                setColor(android.graphics.Color.BLUE)
-                setStyle(Style.FILL)
-            }
-            val paintStroke = AndroidGraphicFactory.INSTANCE.createPaint().apply {
-                setColor(android.graphics.Color.WHITE)
-                setStyle(Style.STROKE)
-                setStrokeWidth(3f)
-            }
+        // Since Circle's latLong is private in some Mapsforge versions and it lacks a setter,
+        // we'll just remove the old one and recreate it to update its position.
+        userLocationCircle?.let {
+            mapView.layerManager.layers.remove(it)
+        }
 
-            val newCircle = Circle(latLong, 10f, paintFill, paintStroke)
-            mapView.layerManager.layers.add(newCircle)
-            userLocationCircle = newCircle
+        val paintFill = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+            setColor(android.graphics.Color.BLUE)
+            setStyle(Style.FILL)
+        }
+        val paintStroke = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+            setColor(android.graphics.Color.WHITE)
+            setStyle(Style.STROKE)
+            setStrokeWidth(3f)
+        }
+
+        val newCircle = Circle(latLong, 10f, paintFill, paintStroke)
+        mapView.layerManager.layers.add(newCircle)
+        userLocationCircle = newCircle
+    }
+
+    fun drawBreadcrumbs(points: List<LatLong>, color: Int = android.graphics.Color.argb(128, 0, 0, 255), strokeWidth: Float = 8f) {
+        breadcrumbsPolyline?.let {
+            mapView.layerManager.layers.remove(it)
+        }
+
+        if (points.isEmpty()) {
+            breadcrumbsPolyline = null
+            return
+        }
+
+        val paint = AndroidGraphicFactory.INSTANCE.createPaint().apply {
+            setColor(color)
+            setStrokeWidth(strokeWidth)
+            setStyle(Style.STROKE)
+        }
+
+        val polyline = Polyline(paint, AndroidGraphicFactory.INSTANCE)
+        val latLongs = polyline.latLongs
+        for (point in points) {
+            latLongs.add(point)
+        }
+
+        // To keep it behind the user dot but above the map, we can just add it before the circle
+        // Actually, layer order in Mapsforge is simple append.
+        // We'll remove and re-add the user location circle so the dot is on top.
+        mapView.layerManager.layers.add(polyline)
+        breadcrumbsPolyline = polyline
+
+        userLocationCircle?.let {
+            mapView.layerManager.layers.remove(it)
+            mapView.layerManager.layers.add(it)
         }
     }
 

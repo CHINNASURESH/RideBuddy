@@ -40,7 +40,8 @@ class MainViewModel @Inject constructor(
     private val billingManager: BillingManager,
     private val analyticsManager: com.example.ridebuddy.util.AnalyticsManager,
     private val smartReviewManager: SmartReviewManager,
-    private val remoteConfigManager: RemoteConfigManager
+    private val remoteConfigManager: RemoteConfigManager,
+    val rideRecorder: RideRecorder
 ) : ViewModel() {
 
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
@@ -221,8 +222,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun toggleRecording(context: android.content.Context, start: Boolean) {
+    fun toggleRecording(context: android.content.Context, start: Boolean, locationFlow: StateFlow<android.location.Location?>) {
         _isRecording.value = start
+
+        if (start) {
+            rideRecorder.startRecording(locationFlow)
+        } else {
+            rideRecorder.stopRecording()
+        }
+
+        // Keep the old intents in case we want to clean up LocationService
+        // But since we removed the logic from there, we just start/stop location updates
         val intent = Intent(context, LocationService::class.java).apply {
             action = if (start) LocationService.ACTION_START_RECORDING else LocationService.ACTION_STOP_RECORDING
         }
