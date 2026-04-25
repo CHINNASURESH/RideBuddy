@@ -14,8 +14,10 @@ import com.example.ridebuddy.ui.MapScreen
 import com.example.ridebuddy.ui.MainViewModel
 import androidx.activity.viewModels
 import android.view.KeyEvent
+import androidx.lifecycle.lifecycleScope
 import com.example.ridebuddy.data.offline.OfflineStorageManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -30,6 +32,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         checkBatteryOptimizations()
+
+        // Launch coroutine to extract asset if needed
+        lifecycleScope.launch {
+            offlineStorageManager.extractMapAsset("germany.map")
+        }
 
         setContent {
             MapScreen(viewModel = viewModel, offlineStorageManager = offlineStorageManager)

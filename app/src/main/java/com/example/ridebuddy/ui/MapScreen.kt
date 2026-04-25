@@ -256,6 +256,15 @@ fun MapScreen(
         }
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
+        val mapExtractionReady by offlineStorageManager?.mapExtractionReady?.collectAsState(initial = false) ?: remember { mutableStateOf(false) }
+
+        LaunchedEffect(mapExtractionReady, mapManager) {
+            if (mapExtractionReady && mapManager != null && offlineStorageManager != null) {
+                val mapFile = offlineStorageManager.getOfflineFile("germany.map")
+                mapManager?.loadMapFile(mapFile)
+            }
+        }
+
         MapsforgeMap(
             modifier = Modifier.fillMaxSize(),
             onMapReady = { mapView ->
@@ -265,10 +274,6 @@ fun MapScreen(
                     override fun onLongPress(latLong: LatLong) {
                         viewModel.routingStateManager.addWaypoint(latLong)
                     }
-                }
-                if (offlineStorageManager != null) {
-                    val mapFile = offlineStorageManager.getOfflineFile("germany.map")
-                    newMapManager.loadMapFile(mapFile)
                 }
                 mapView.layerManager.layers.add(ridersOverlay)
 
