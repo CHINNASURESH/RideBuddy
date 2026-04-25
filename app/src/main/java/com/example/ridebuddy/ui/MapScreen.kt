@@ -45,6 +45,11 @@ import android.net.Uri
 
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 
+enum class MapMode {
+    MY_MAP,
+    MY_GROUP
+}
+
 @Composable
 fun MapsforgeMap(
     modifier: Modifier = Modifier,
@@ -152,6 +157,9 @@ fun MapScreen(
             compassManager.stop()
         }
     }
+
+    // Map Mode State
+    var mapMode by remember { mutableStateOf(MapMode.MY_MAP) }
 
     // UI State for selections
     var selectedDuration by remember { mutableStateOf(4) } // Hours
@@ -329,6 +337,34 @@ fun MapScreen(
             Icon(Icons.Filled.Menu, contentDescription = "Menu")
         }
 
+        // Map Mode TabRow
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+                .width(200.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            shadowElevation = 4.dp
+        ) {
+            TabRow(
+                selectedTabIndex = mapMode.ordinal,
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                divider = {}
+            ) {
+                Tab(
+                    selected = mapMode == MapMode.MY_MAP,
+                    onClick = { mapMode = MapMode.MY_MAP },
+                    text = { Text("My Map") }
+                )
+                Tab(
+                    selected = mapMode == MapMode.MY_GROUP,
+                    onClick = { mapMode = MapMode.MY_GROUP },
+                    text = { Text("My Group") }
+                )
+            }
+        }
+
         // Network Status Overlay
         if (!isOnline && !DEBUG_ASO_MODE) {
             Surface(
@@ -439,69 +475,71 @@ fun MapScreen(
                 ) {
                 Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
 
-                if (!permissionsState.allPermissionsGranted) {
-                    Text(
-                        "Permissions required to share location.",
-                        color = MaterialTheme.colorScheme.error
-                    )
+                if (mapMode == MapMode.MY_GROUP) {
+                    if (!permissionsState.allPermissionsGranted) {
+                        Text(
+                            "Permissions required to share location.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = { permissionsState.launchMultiplePermissionRequest() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Grant Permissions")
+                        }
+                    } else {
+                        if (isSharing) {
+                            Button(
+                                onClick = {
+                                    viewModel.stopSharing()
+                                    isSharing = false
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Stop Sharing")
+                            }
+
+                            Text("Update Frequency:", style = MaterialTheme.typography.labelLarge)
+                            FrequencySelector(
+                                selected = selectedFrequency,
+                                onSelect = {
+                                    selectedFrequency = it
+                                    viewModel.updateFrequency(it)
+                                }
+                            )
+                        } else {
+                            Text("Start Sharing Location:", style = MaterialTheme.typography.labelLarge)
+
+                            Text("Duration:", style = MaterialTheme.typography.bodyMedium)
+                            DurationSelector(
+                                selected = selectedDuration,
+                                onSelect = { selectedDuration = it }
+                            )
+
+                            Text("Update Frequency:", style = MaterialTheme.typography.bodyMedium)
+                            FrequencySelector(
+                                selected = selectedFrequency,
+                                onSelect = { selectedFrequency = it }
+                            )
+
+                            Button(
+                                onClick = {
+                                    viewModel.startSharing(selectedDuration, selectedFrequency)
+                                    isSharing = true
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Start Sharing")
+                            }
+                        }
+                    }
+                } else if (mapMode == MapMode.MY_MAP) {
                     Button(
-                        onClick = { permissionsState.launchMultiplePermissionRequest() },
+                        onClick = { gpxPickerLauncher.launch("*/*") },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Grant Permissions")
-                    }
-                } else {
-                    if (isSharing) {
-                        Button(
-                            onClick = {
-                                viewModel.stopSharing()
-                                isSharing = false
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Stop Sharing")
-                        }
-
-                        Text("Update Frequency:", style = MaterialTheme.typography.labelLarge)
-                        FrequencySelector(
-                            selected = selectedFrequency,
-                            onSelect = {
-                                selectedFrequency = it
-                                viewModel.updateFrequency(it)
-                            }
-                        )
-                    } else {
-                        Text("Start Sharing Location:", style = MaterialTheme.typography.labelLarge)
-
-                        Text("Duration:", style = MaterialTheme.typography.bodyMedium)
-                        DurationSelector(
-                            selected = selectedDuration,
-                            onSelect = { selectedDuration = it }
-                        )
-
-                        Text("Update Frequency:", style = MaterialTheme.typography.bodyMedium)
-                        FrequencySelector(
-                            selected = selectedFrequency,
-                            onSelect = { selectedFrequency = it }
-                        )
-
-                        Button(
-                            onClick = {
-                                viewModel.startSharing(selectedDuration, selectedFrequency)
-                                isSharing = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Start Sharing")
-                        }
-
-                        Button(
-                            onClick = { gpxPickerLauncher.launch("*/*") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Import GPX Route")
-                        }
+                        Text("Import GPX Route")
                     }
 
                     if (!isPro) {
