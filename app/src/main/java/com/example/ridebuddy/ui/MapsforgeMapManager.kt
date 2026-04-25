@@ -267,4 +267,8 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     fun setZoomLevel(zoom: Byte) {
         mapView.model.mapViewPosition.zoomLevel = zoom
     }
+
+    fun setMapPosition(mapPosition: org.mapsforge.core.model.MapPosition) {
+        mapView.model.mapViewPosition.mapPosition = mapPosition
+    }
 }
