@@ -228,6 +228,11 @@ fun MapScreen(
         }
     }
 
+    val recordedPath by viewModel.rideRecorder.recordedPath.collectAsState()
+
+    LaunchedEffect(recordedPath) {
+        mapManager?.drawBreadcrumbs(recordedPath)
+    }
 
     LaunchedEffect(routingState.waypoints) {
         mapManager?.drawWaypoints(routingState.waypoints)
@@ -517,7 +522,7 @@ fun MapScreen(
                     if (isRecording) {
                         Button(
                             onClick = {
-                                viewModel.toggleRecording(context, false)
+                                viewModel.toggleRecording(context, false, locationTracker.location)
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                             modifier = Modifier.fillMaxWidth()
@@ -527,7 +532,7 @@ fun MapScreen(
                     } else {
                         Button(
                             onClick = {
-                                viewModel.toggleRecording(context, true)
+                                viewModel.toggleRecording(context, true, locationTracker.location)
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
