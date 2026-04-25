@@ -226,7 +226,7 @@ class MainViewModel @Inject constructor(
         val intent = Intent(context, LocationService::class.java).apply {
             action = if (start) LocationService.ACTION_START_RECORDING else LocationService.ACTION_STOP_RECORDING
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (start && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
         } else {
             context.startService(intent)
