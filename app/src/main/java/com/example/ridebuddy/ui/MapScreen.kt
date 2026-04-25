@@ -50,11 +50,40 @@ enum class MapMode {
     MY_GROUP
 }
 
+
+fun calculateBoundingBox(
+    currentLocation: android.location.Location,
+    riders: List<com.example.ridebuddy.ui.UserUiModel>
+): org.mapsforge.core.model.BoundingBox {
+    var minLat = currentLocation.latitude
+    var maxLat = currentLocation.latitude
+    var minLon = currentLocation.longitude
+    var maxLon = currentLocation.longitude
+
+    for (rider in riders) {
+        if (rider.position.latitude < minLat) minLat = rider.position.latitude
+        if (rider.position.latitude > maxLat) maxLat = rider.position.latitude
+        if (rider.position.longitude < minLon) minLon = rider.position.longitude
+        if (rider.position.longitude > maxLon) maxLon = rider.position.longitude
+    }
+
+    val latMargin = (maxLat - minLat) * 0.1
+    val lonMargin = (maxLon - minLon) * 0.1
+    val margin = maxOf(latMargin, lonMargin, 0.001)
+
+    return org.mapsforge.core.model.BoundingBox(
+        minLat - margin, minLon - margin, maxLat + margin, maxLon + margin
+    )
+}
+
 @Composable
 fun MapsforgeMap(
+
     modifier: Modifier = Modifier,
     currentLocation: android.location.Location? = null,
     mapManager: MapsforgeMapManager? = null,
+    mapMode: MapMode = MapMode.MY_MAP,
+    friends: List<com.example.ridebuddy.ui.UserUiModel> = emptyList(),
     onMapReady: (MapView) -> Unit
 ) {
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
@@ -83,6 +112,35 @@ fun MapsforgeMap(
                 if (isFirstLocation) {
                     mapManager.setCenter(latLong)
                     isFirstLocation = false
+                } else {
+                    when (mapMode) {
+                        MapMode.MY_MAP -> {
+                            mapManager.setCenter(latLong)
+                            mapManager.setZoomLevel(16.toByte())
+                        }
+                        MapMode.MY_GROUP -> {
+                            val activeRiders = friends // friends are already filtered correctly by the activeFriends flow (they are active group riders)
+                            val boundingBox = calculateBoundingBox(currentLocation, activeRiders)
+
+                            val latDiff = boundingBox.maxLatitude - boundingBox.minLatitude
+                            val lonDiff = boundingBox.maxLongitude - boundingBox.minLongitude
+                            val maxDiff = maxOf(latDiff, lonDiff)
+
+                            var zoom: Byte = 16
+                            if (maxDiff > 0) {
+                                // Simple heuristic for zoom level based on bounding box size
+                                val scale = 360.0 / maxDiff
+                                zoom = (Math.log(scale) / Math.log(2.0)).toInt().toByte()
+                            }
+
+                            // Clamp zoom to reasonable values
+                            if (zoom < 5) zoom = 5
+                            if (zoom > 20) zoom = 20
+
+                            val newPosition = org.mapsforge.core.model.MapPosition(boundingBox.centerPoint, zoom)
+                            mapManager.setMapPosition(newPosition)
+                        }
+                    }
                 }
             }
         }
@@ -303,6 +361,8 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize(),
             currentLocation = userLocation,
             mapManager = mapManager,
+            mapMode = mapMode,
+            friends = friends,
             onMapReady = { mapView ->
                 val newMapManager = MapsforgeMapManager(mapView.context, mapView)
                 mapManager = newMapManager
