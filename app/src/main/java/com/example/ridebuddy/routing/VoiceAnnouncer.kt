@@ -9,7 +9,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
 
-class TtsHelper(private val context: Context) : TextToSpeech.OnInitListener {
+class VoiceAnnouncer(private val context: Context) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var isInitialized = false

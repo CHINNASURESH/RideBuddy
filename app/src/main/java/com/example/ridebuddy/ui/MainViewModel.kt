@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.example.ridebuddy.routing.RoutingStateManager
 import com.example.ridebuddy.routing.RoutingState
-import com.example.ridebuddy.routing.TtsHelper
+import com.example.ridebuddy.routing.VoiceAnnouncer
 import com.example.ridebuddy.network.NetworkMonitor
 import com.example.ridebuddy.billing.BillingManager
 import com.example.ridebuddy.util.RemoteConfigManager
@@ -65,10 +65,10 @@ class MainViewModel @Inject constructor(
         data class Zoom(val delta: Int) : MapControlEvent()
     }
 
-    private var ttsHelper: TtsHelper? = null
+    private var voiceAnnouncer: VoiceAnnouncer? = null
 
     init {
-        ttsHelper = TtsHelper(application)
+        voiceAnnouncer = VoiceAnnouncer(application)
 
         // Start listening to the permanent user document in Firestore to enable premium features
         viewModelScope.launch {
@@ -133,11 +133,11 @@ class MainViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        ttsHelper?.shutdown()
+        voiceAnnouncer?.shutdown()
     }
 
     fun speakTurnInstruction(text: String) {
-        ttsHelper?.speak(text)
+        voiceAnnouncer?.speak(text)
     }
 
     fun panMap(dx: Double, dy: Double) {
