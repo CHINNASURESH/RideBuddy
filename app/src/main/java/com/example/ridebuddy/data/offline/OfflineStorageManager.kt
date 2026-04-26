@@ -33,7 +33,7 @@ class OfflineStorageManager @Inject constructor(
      */
     suspend fun extractMapAsset(assetFileName: String) {
         val success = AssetExtractor.extractAssetIfNeeded(context, assetFileName, offlineDataDir)
-        if (success) {
+        if (success && assetFileName == "germany.map") {
             _mapExtractionReady.value = true
         }
     }

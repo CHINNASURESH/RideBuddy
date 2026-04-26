@@ -25,6 +25,7 @@ object AssetExtractor {
         destinationDir: File
     ): Boolean = withContext(Dispatchers.IO) {
         val destinationFile = File(destinationDir, assetFileName)
+        destinationFile.parentFile?.mkdirs()
 
         if (destinationFile.exists() && destinationFile.isFile) {
             // File already exists, no need to copy

@@ -41,9 +41,19 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
             osmWaypoints.add(node)
         }
 
-        val engine = RoutingEngine(null, null, segmentsDir, osmWaypoints, rc)
+        val engine = try {
+            RoutingEngine(null, null, segmentsDir, osmWaypoints, rc)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return RoutingResult(emptyList(), emptyList())
+        }
 
-        engine.doRun(10000)
+        try {
+            engine.doRun(10000)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return RoutingResult(emptyList(), emptyList())
+        }
 
         if (engine.errorMessage != null) {
             println("BRouter error: " + engine.errorMessage)
