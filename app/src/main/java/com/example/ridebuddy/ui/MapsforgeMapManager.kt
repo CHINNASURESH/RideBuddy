@@ -69,7 +69,16 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
                 AndroidGraphicFactory.INSTANCE
             )
 
-            tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
+        val mapDataStore = try { MapFile(mapFile) } catch (e: org.mapsforge.map.reader.header.MapFileException) { e.printStackTrace(); return } catch (e: Exception) { e.printStackTrace(); return }
+
+        tileRendererLayer = TileRendererLayer(
+            tileCache,
+            mapDataStore,
+            mapView.model.mapViewPosition,
+            AndroidGraphicFactory.INSTANCE
+        )
+
+        tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
 
             mapView.layerManager.layers.add(tileRendererLayer)
 
