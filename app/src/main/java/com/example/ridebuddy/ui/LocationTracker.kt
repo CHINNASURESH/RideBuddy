@@ -17,6 +17,19 @@ class LocationTracker(context: Context) {
     val location: StateFlow<Location?> = _location.asStateFlow()
 
     @SuppressLint("MissingPermission")
+    fun fastFetch() {
+        try {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    _location.value = it
+                }
+            }
+        } catch (e: SecurityException) {
+            // Assume permissions are handled
+        }
+    }
+
+    @SuppressLint("MissingPermission")
     fun start() {
         if (locationCallback != null) return // Already started
 
