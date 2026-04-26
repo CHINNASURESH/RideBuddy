@@ -46,7 +46,7 @@ import android.net.Uri
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory
 
 enum class MapMode {
-    MY_MAP,
+    MY_RIDE,
     MY_GROUP
 }
 
@@ -82,7 +82,7 @@ fun MapsforgeMap(
     modifier: Modifier = Modifier,
     currentLocation: android.location.Location? = null,
     mapManager: MapsforgeMapManager? = null,
-    mapMode: MapMode = MapMode.MY_MAP,
+    mapMode: MapMode = MapMode.MY_RIDE,
     friends: List<com.example.ridebuddy.ui.UserUiModel> = emptyList(),
     onMapReady: (MapView) -> Unit
 ) {
@@ -114,7 +114,7 @@ fun MapsforgeMap(
                     isFirstLocation = false
                 } else {
                     when (mapMode) {
-                        MapMode.MY_MAP -> {
+                        MapMode.MY_RIDE -> {
                             mapManager.setCenter(latLong)
                             mapManager.setZoomLevel(16.toByte())
                         }
@@ -234,13 +234,15 @@ fun MapScreen(
     }
 
     // Map Mode State
-    var mapMode by remember { mutableStateOf(MapMode.MY_MAP) }
+    var mapMode by remember { mutableStateOf(MapMode.MY_RIDE) }
 
     // UI State for selections
     var selectedDuration by remember { mutableStateOf(4) } // Hours
     var selectedFrequency by remember { mutableStateOf(10) } // Minutes (0 = Live)
     var isSharing by remember { mutableStateOf(false) }
     var showProDialog = remember { mutableStateOf(false) }
+
+    var showGroupSetup by remember { mutableStateOf(true) }
 
     val isSolarTelemetryEnabled by viewModel.isSolarTelemetryEnabled.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
@@ -346,6 +348,16 @@ fun MapScreen(
 
     val DEBUG_ASO_MODE = false
 
+    if (showGroupSetup) {
+        GroupSetupScreen(
+            onGroupSelected = { code ->
+                viewModel.joinGroup(code)
+                showGroupSetup = false
+            }
+        )
+        return
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -430,9 +442,9 @@ fun MapScreen(
                 divider = {}
             ) {
                 Tab(
-                    selected = mapMode == MapMode.MY_MAP,
-                    onClick = { mapMode = MapMode.MY_MAP },
-                    text = { Text("My Map") }
+                    selected = mapMode == MapMode.MY_RIDE,
+                    onClick = { mapMode = MapMode.MY_RIDE },
+                    text = { Text("My Ride") }
                 )
                 Tab(
                     selected = mapMode == MapMode.MY_GROUP,
@@ -461,7 +473,7 @@ fun MapScreen(
         }
 
         // Turn By Turn Overlay
-        if ((routingState.isRoutingActive && routingState.currentInstruction != null) || DEBUG_ASO_MODE) {
+        if (mapMode == MapMode.MY_RIDE && ((routingState.isRoutingActive && routingState.currentInstruction != null) || DEBUG_ASO_MODE)) {
             val instruction = if (DEBUG_ASO_MODE) {
                 com.example.ridebuddy.routing.TurnInstruction(
                     coordinate = LatLong(0.0, 0.0),
@@ -611,7 +623,7 @@ fun MapScreen(
                             }
                         }
                     }
-                } else if (mapMode == MapMode.MY_MAP) {
+                } else if (mapMode == MapMode.MY_RIDE) {
                     Button(
                         onClick = { gpxPickerLauncher.launch("*/*") },
                         modifier = Modifier.fillMaxWidth()

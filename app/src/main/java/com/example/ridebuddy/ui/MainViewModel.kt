@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -56,6 +57,9 @@ class MainViewModel @Inject constructor(
 
     // Ideally, get current user ID from Auth. For now hardcoded or passed.
     val currentUserId = "current_user_id_123"
+
+    private val _currentGroupId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    val currentGroupId: StateFlow<String?> = _currentGroupId
 
     private val _mapControlEvents = MutableSharedFlow<MapControlEvent>(extraBufferCapacity = 10)
     val mapControlEvents = _mapControlEvents.asSharedFlow()
@@ -157,29 +161,38 @@ class MainViewModel @Inject constructor(
     }
 
 
-    val activeFriends: StateFlow<List<UserUiModel>> = repository.getActiveGroupRiders("default_group")
-        .map { users ->
-            users.map { user ->
-                UserUiModel(
-                    userId = user.userId,
-                    position = LatLong(user.latitude, user.longitude),
-                    heading = user.heading,
-                    lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}",
-                    status = user.status
-                )
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val activeFriends: StateFlow<List<UserUiModel>> = _currentGroupId
+        .flatMapLatest { groupId ->
+            if (groupId == null) kotlinx.coroutines.flow.flowOf(emptyList())
+            else repository.getActiveGroupRiders(groupId).map { users ->
+                users.map { user ->
+                    UserUiModel(
+                        userId = user.userId,
+                        position = LatLong(user.latitude, user.longitude),
+                        heading = user.heading,
+                        lastSeenText = "Last seen: ${user.lastUpdated?.toDate()}",
+                        status = user.status
+                    )
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun joinGroup(groupId: String) {
+        _currentGroupId.value = groupId
+    }
 
     fun updateHeading(heading: Float) {
         repository.localUserHeading.value = heading
     }
 
     fun setStatus(status: String?) {
+        val groupId = _currentGroupId.value ?: return
         viewModelScope.launch {
             try {
                 val currentUserId = authRepository.getUserId()
-                repository.updateUserStatus("default_group", currentUserId, status)
+                repository.updateUserStatus(groupId, currentUserId, status)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -187,6 +200,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun startSharing(durationHours: Int, intervalMinutes: Int) {
+        val groupId = _currentGroupId.value ?: return
         viewModelScope.launch {
             try {
                 val currentUserId = authRepository.getUserId()
@@ -197,7 +211,7 @@ class MainViewModel @Inject constructor(
                 val intent = Intent(application, LocationService::class.java).apply {
                     action = LocationService.ACTION_START
                     putExtra(LocationService.EXTRA_USER_ID, currentUserId)
-                    putExtra(LocationService.EXTRA_GROUP_ID, "default_group")
+                    putExtra(LocationService.EXTRA_GROUP_ID, groupId)
                     putExtra(LocationService.EXTRA_EXPIRY, expiry)
                     putExtra(LocationService.EXTRA_INTERVAL, intervalMillis)
                 }
