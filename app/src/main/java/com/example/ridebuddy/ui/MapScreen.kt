@@ -15,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.ridebuddy.util.GpxParser
@@ -446,7 +447,7 @@ fun MapScreen(
         ) {
             // Map Mode TabRow
             Surface(
-                modifier = Modifier.width(200.dp),
+                modifier = Modifier.fillMaxWidth(0.6f),
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                 shadowElevation = 4.dp
@@ -459,12 +460,14 @@ fun MapScreen(
                     Tab(
                         selected = mapMode == MapMode.MY_RIDE,
                         onClick = { mapMode = MapMode.MY_RIDE },
-                        text = { Text("My Ride") }
+                        modifier = Modifier.weight(1f),
+                        text = { Text("My Ride", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     )
                     Tab(
                         selected = mapMode == MapMode.MY_GROUP,
                         onClick = { mapMode = MapMode.MY_GROUP },
-                        text = { Text("My Group") }
+                        modifier = Modifier.weight(1f),
+                        text = { Text("My Group", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     )
                 }
             }
