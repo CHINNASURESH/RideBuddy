@@ -6,7 +6,7 @@ import kotlinx.coroutines.withContext
 import org.mapsforge.core.model.LatLong
 
 class MockBRouterEngine : OfflineRoutingEngine {
-    override suspend fun calculateRoute(waypoints: List<LatLong>): RoutingResult {
+    override suspend fun calculateRoute(waypoints: List<LatLong>, profile: String): RoutingResult {
         if (waypoints.size < 2) return RoutingResult(emptyList(), emptyList())
         return withContext(Dispatchers.IO) {
             // Simulate offline calculation delay

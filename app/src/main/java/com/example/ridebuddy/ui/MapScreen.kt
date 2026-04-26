@@ -242,7 +242,7 @@ fun MapScreen(
     var isSharing by remember { mutableStateOf(false) }
     var showProDialog = remember { mutableStateOf(false) }
 
-    var showGroupSetup by remember { mutableStateOf(true) }
+    var showGroupSetup by remember { mutableStateOf(false) }
 
     val isSolarTelemetryEnabled by viewModel.isSolarTelemetryEnabled.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
@@ -348,6 +348,14 @@ fun MapScreen(
 
     val DEBUG_ASO_MODE = false
 
+    val currentGroupId by viewModel.currentGroupId.collectAsState()
+
+    LaunchedEffect(mapMode) {
+        if (mapMode == MapMode.MY_GROUP && currentGroupId == null) {
+            showGroupSetup = true
+        }
+    }
+
     if (showGroupSetup) {
         GroupSetupScreen(
             onGroupSelected = { code ->
@@ -426,32 +434,114 @@ fun MapScreen(
             Icon(Icons.Filled.Menu, contentDescription = "Menu")
         }
 
-        // Map Mode TabRow
-        Surface(
+        // Top Container for Tabs & Search
+        Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-                .width(200.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-            shadowElevation = 4.dp
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TabRow(
-                selectedTabIndex = mapMode.ordinal,
-                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                divider = {}
+            // Map Mode TabRow
+            Surface(
+                modifier = Modifier.width(200.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                shadowElevation = 4.dp
             ) {
-                Tab(
-                    selected = mapMode == MapMode.MY_RIDE,
-                    onClick = { mapMode = MapMode.MY_RIDE },
-                    text = { Text("My Ride") }
-                )
-                Tab(
-                    selected = mapMode == MapMode.MY_GROUP,
-                    onClick = { mapMode = MapMode.MY_GROUP },
-                    text = { Text("My Group") }
-                )
+                TabRow(
+                    selectedTabIndex = mapMode.ordinal,
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = mapMode == MapMode.MY_RIDE,
+                        onClick = { mapMode = MapMode.MY_RIDE },
+                        text = { Text("My Ride") }
+                    )
+                    Tab(
+                        selected = mapMode == MapMode.MY_GROUP,
+                        onClick = { mapMode = MapMode.MY_GROUP },
+                        text = { Text("My Group") }
+                    )
+                }
             }
+
+            if (!routingState.isRoutingActive) {
+                var searchQuery by remember { mutableStateOf("") }
+                var isSearching by remember { mutableStateOf(false) }
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .padding(top = 16.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                    shadowElevation = 8.dp
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search Destination") },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                        singleLine = true,
+                        trailingIcon = {
+                            if (isSearching) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                IconButton(onClick = {
+                                    if (searchQuery.isNotBlank() && userLocation != null) {
+                                        isSearching = true
+                                        coroutineScope.launch {
+                                            val geocoder = com.example.ridebuddy.search.GeocoderLocationSearch(context)
+                                            val results = geocoder.search(searchQuery)
+                                            if (results.isNotEmpty()) {
+                                                val dest = results.first()
+                                                val destLatLong = LatLong(dest.latitude, dest.longitude)
+                                                val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
+                                                viewModel.calculatePreRideRoute(listOf(originLatLong, destLatLong))
+                                            }
+                                            isSearching = false
+                                        }
+                                    }
+                                }) {
+                                    Icon(Icons.Filled.Place, contentDescription = "Search")
+                                }
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent
+                        )
+                    )
+                }
+            }
+        }
+
+        val preRideResult by viewModel.preRideRouteResult.collectAsState()
+        val currentProfile by viewModel.currentVehicleProfile.collectAsState()
+
+        if (preRideResult != null) {
+            PreRideSetupBottomSheet(
+                distanceMeters = preRideResult!!.totalDistance,
+                etaSeconds = preRideResult!!.totalSeconds,
+                selectedVehicle = currentProfile,
+                onVehicleSelected = { profile ->
+                    viewModel.setVehicleProfile(profile)
+                    // Recalculate route when vehicle changes
+                    if (userLocation != null && preRideResult!!.path.isNotEmpty()) {
+                        val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
+                        val destLatLong = preRideResult!!.path.last()
+                        viewModel.calculatePreRideRoute(listOf(originLatLong, destLatLong))
+                    }
+                },
+                onStartRide = {
+                    viewModel.startPreRideNavigation()
+                },
+                onDismiss = {
+                    viewModel.clearPreRideRoute()
+                }
+            )
         }
 
         // Network Status Overlay
