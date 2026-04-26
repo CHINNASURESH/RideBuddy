@@ -1,31 +1,95 @@
 {
   "project_info": {
-    "project_number": "1234567890",
-    "project_id": "dummy-project",
-    "storage_bucket": "dummy-project.appspot.com"
+    "project_number": "195180595180",
+    "project_id": "sbuddy-71444",
+    "storage_bucket": "sbuddy-71444.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1234567890:android:abcdef0123456789",
+        "mobilesdk_app_id": "1:195180595180:android:b03fb5d74d286e4cb5a2c9",
         "android_client_info": {
           "package_name": "com.example.ridebuddy"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1234567890-abcdef0123456789.apps.googleusercontent.com",
+          "client_id": "195180595180-h93bntpiv8aor8jeokq2qtb0s70e32mv.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForTestingPurposesOnly"
+          "current_key": "AIzaSyDzg6ekT49IVmslqCRcLDQsTJo-pQsWTrw"
+        },
+        {
+          "current_key": "AIzaSyAzYIX1iCqa2d4oLaAUlmxri9oeq8Wsv04"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195180595180-h93bntpiv8aor8jeokq2qtb0s70e32mv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195180595180:android:823f0e7acb6ae020b5a2c9",
+        "android_client_info": {
+          "package_name": "com.example.ridebuddy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "195180595180-fag6q2kjqmp0hhd81i26lhv5knldea3a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ridebuddy",
+            "certificate_hash": "a689b27b097410e48d0f08a325b9cb9304372746"
+          }
+        },
+        {
+          "client_id": "195180595180-mlggkim0up47lsmr5p8cbroalr76j38f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ridebuddy",
+            "certificate_hash": "d956d7dfa7d85e777eccf7f9dce20c81518629cf"
+          }
+        },
+        {
+          "client_id": "195180595180-vcbisu6093pb34hfb7lg8m4f5ipe5d81.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ridebuddy",
+            "certificate_hash": "16def5e2336926dbae969c144057356a131c7e83"
+          }
+        },
+        {
+          "client_id": "195180595180-h93bntpiv8aor8jeokq2qtb0s70e32mv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzg6ekT49IVmslqCRcLDQsTJo-pQsWTrw"
+        },
+        {
+          "current_key": "AIzaSyAzYIX1iCqa2d4oLaAUlmxri9oeq8Wsv04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "195180595180-h93bntpiv8aor8jeokq2qtb0s70e32mv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
