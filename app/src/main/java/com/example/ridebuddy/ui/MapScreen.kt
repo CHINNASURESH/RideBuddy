@@ -33,8 +33,6 @@ import androidx.compose.material.icons.filled.Menu
 import com.example.ridebuddy.data.User
 import org.mapsforge.map.android.view.MapView
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.example.ridebuddy.data.offline.OfflineStorageManager
 import com.example.ridebuddy.routing.RoutingState
 import org.mapsforge.core.graphics.Color
@@ -111,6 +109,7 @@ fun MapsforgeMap(
 
                 if (isFirstLocation) {
                     mapManager.setCenter(latLong)
+                    mapManager.setZoomLevel(15.toByte())
                     isFirstLocation = false
                 } else {
                     when (mapMode) {
@@ -156,7 +155,7 @@ fun findActivity(context: android.content.Context): android.app.Activity? {
     return null
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
     viewModel: MainViewModel = hiltViewModel(),
@@ -181,12 +180,6 @@ fun MapScreen(
     val locationTracker = remember { LocationTracker(context) }
     val userLocation by locationTracker.location.collectAsState()
 
-    DisposableEffect(Unit) {
-        locationTracker.start()
-        onDispose {
-            locationTracker.stop()
-        }
-    }
 
     // Announce route start
     LaunchedEffect(routingState.isRoutingActive) {
@@ -224,12 +217,23 @@ fun MapScreen(
         permissions.add(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    val permissionsState = rememberMultiplePermissionsState(permissions = permissions)
+    var allPermissionsGranted by remember { mutableStateOf(false) }
 
-    DisposableEffect(permissionsState.allPermissionsGranted) {
-        compassManager.start()
+    val permissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        allPermissionsGranted = permissionsMap.values.all { it }
+    }
+
+    DisposableEffect(allPermissionsGranted) {
+        if (allPermissionsGranted) {
+            compassManager.start()
+            locationTracker.fastFetch()
+            locationTracker.start()
+        }
         onDispose {
             compassManager.stop()
+            locationTracker.stop()
         }
     }
 
@@ -288,9 +292,7 @@ fun MapScreen(
 
     // Request permissions on launch
     LaunchedEffect(Unit) {
-        if (!permissionsState.allPermissionsGranted) {
-            permissionsState.launchMultiplePermissionRequest()
-        }
+        permissionsLauncher.launch(permissions.toTypedArray())
     }
 
     // Combine friends list and heading to correctly update the overlay without overwriting state
@@ -655,13 +657,13 @@ fun MapScreen(
                 Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
 
                 if (mapMode == MapMode.MY_GROUP) {
-                    if (!permissionsState.allPermissionsGranted) {
+                    if (!allPermissionsGranted) {
                         Text(
                             "Permissions required to share location.",
                             color = MaterialTheme.colorScheme.error
                         )
                         Button(
-                            onClick = { permissionsState.launchMultiplePermissionRequest() },
+                            onClick = { permissionsLauncher.launch(permissions.toTypedArray()) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Grant Permissions")
