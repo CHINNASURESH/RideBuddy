@@ -53,28 +53,32 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
     fun loadMapFile(mapFile: File) {
         if (!mapFile.exists()) return
 
-        val tileCache = AndroidUtil.createTileCache(
-            context, "mapcache",
-            mapView.model.displayModel.tileSize, 1f,
-            mapView.model.frameBufferModel.overdrawFactor
-        )
+        try {
+            val mapDataStore = MapFile(mapFile)
 
-        val mapDataStore = MapFile(mapFile)
+            val tileCache = AndroidUtil.createTileCache(
+                context, "mapcache",
+                mapView.model.displayModel.tileSize, 1f,
+                mapView.model.frameBufferModel.overdrawFactor
+            )
 
-        tileRendererLayer = TileRendererLayer(
-            tileCache,
-            mapDataStore,
-            mapView.model.mapViewPosition,
-            AndroidGraphicFactory.INSTANCE
-        )
+            tileRendererLayer = TileRendererLayer(
+                tileCache,
+                mapDataStore,
+                mapView.model.mapViewPosition,
+                AndroidGraphicFactory.INSTANCE
+            )
 
-        tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
+            tileRendererLayer?.setXmlRenderTheme(InternalRenderTheme.OSMARENDER)
 
-        mapView.layerManager.layers.add(tileRendererLayer)
+            mapView.layerManager.layers.add(tileRendererLayer)
 
-        mapView.model.mapViewPosition.center = LatLong(52.5200, 13.4050)
+            mapView.model.mapViewPosition.center = LatLong(52.5200, 13.4050)
 
-        mapView.model.mapViewPosition.zoomLevel = 15.toByte()
+            mapView.model.mapViewPosition.zoomLevel = 15.toByte()
+        } catch (e: Exception) {
+            android.util.Log.e("MapsforgeMapManager", "Failed to load map file: ${mapFile.absolutePath}", e)
+        }
     }
 
     fun setNightMode(isNightMode: Boolean) {
