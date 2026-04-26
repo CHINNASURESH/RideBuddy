@@ -59,7 +59,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
             mapView.model.frameBufferModel.overdrawFactor
         )
 
-        val mapDataStore = MapFile(mapFile)
+        val mapDataStore = try { MapFile(mapFile) } catch (e: org.mapsforge.map.reader.header.MapFileException) { e.printStackTrace(); return } catch (e: Exception) { e.printStackTrace(); return }
 
         tileRendererLayer = TileRendererLayer(
             tileCache,
