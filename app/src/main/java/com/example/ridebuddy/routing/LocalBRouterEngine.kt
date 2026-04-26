@@ -11,7 +11,7 @@ import java.util.ArrayList
 
 class LocalBRouterEngine(private val context: Context, private val brouterDir: File) : OfflineRoutingEngine {
 
-    override suspend fun calculateRoute(waypoints: List<LatLong>): RoutingResult {
+    override suspend fun calculateRoute(waypoints: List<LatLong>, profile: String): RoutingResult {
         if (waypoints.size < 2) return RoutingResult(emptyList(), emptyList())
         val rc = RoutingContext()
         rc.turnInstructionMode = 3 // osmand style
@@ -21,7 +21,15 @@ class LocalBRouterEngine(private val context: Context, private val brouterDir: F
             segmentsDir.mkdirs()
         }
 
-        val profileFile = File(brouterDir, "motorcycle.brf")
+        // Map general vehicle profiles to brouter profiles
+        val brouterProfileName = when (profile.lowercase()) {
+            "car" -> "car-eco.brf"
+            "bus" -> "car-eco.brf" // Fallback to car
+            "bike", "motorcycle" -> "motorcycle.brf"
+            else -> "motorcycle.brf"
+        }
+
+        val profileFile = File(brouterDir, brouterProfileName)
         rc.localFunction = profileFile.absolutePath
 
         val osmWaypoints = ArrayList<OsmNodeNamed>()

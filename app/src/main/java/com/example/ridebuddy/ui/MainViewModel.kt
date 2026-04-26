@@ -293,9 +293,38 @@ class MainViewModel @Inject constructor(
         application.startService(intent)
     }
 
+    private val _preRideRouteResult = kotlinx.coroutines.flow.MutableStateFlow<com.example.ridebuddy.routing.RoutingResult?>(null)
+    val preRideRouteResult: StateFlow<com.example.ridebuddy.routing.RoutingResult?> = _preRideRouteResult
+
+    private val _currentVehicleProfile = kotlinx.coroutines.flow.MutableStateFlow("Bike")
+    val currentVehicleProfile: StateFlow<String> = _currentVehicleProfile
+
+    fun setVehicleProfile(profile: String) {
+        _currentVehicleProfile.value = profile
+    }
+
+    fun calculatePreRideRoute(waypoints: List<org.mapsforge.core.model.LatLong>) {
+        viewModelScope.launch {
+            val result = routingEngine.calculateRoute(waypoints, _currentVehicleProfile.value)
+            _preRideRouteResult.value = result
+        }
+    }
+
+    fun clearPreRideRoute() {
+        _preRideRouteResult.value = null
+    }
+
+    fun startPreRideNavigation() {
+        val result = _preRideRouteResult.value
+        if (result != null) {
+            routingStateManager.startRouting(result)
+            _preRideRouteResult.value = null
+        }
+    }
+
     fun calculateRoute(waypoints: List<org.mapsforge.core.model.LatLong>) {
         viewModelScope.launch {
-            val result = routingEngine.calculateRoute(waypoints)
+            val result = routingEngine.calculateRoute(waypoints, _currentVehicleProfile.value)
             routingStateManager.startRouting(result)
         }
     }
