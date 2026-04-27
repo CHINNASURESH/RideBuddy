@@ -84,11 +84,28 @@ class RoutingStateManager(
             nextInstruction.coordinate.latitude, nextInstruction.coordinate.longitude
         )
 
-        val distanceToDest = if (state.routePath.isNotEmpty()) {
-            val dest = state.routePath.last()
-            calculateDistance(location.latitude, location.longitude, dest.latitude, dest.longitude)
-        } else {
-            0.0
+        var distanceToDest = 0.0
+        if (state.routePath.isNotEmpty()) {
+            // Find the closest point on the path to the current location to start distance calculation
+            var minDistance = Double.MAX_VALUE
+            var closestIndex = 0
+            for (i in state.routePath.indices) {
+                val point = state.routePath[i]
+                val dist = calculateDistance(location.latitude, location.longitude, point.latitude, point.longitude)
+                if (dist < minDistance) {
+                    minDistance = dist
+                    closestIndex = i
+                }
+            }
+
+            // Sum distance along the path from the closest point to the destination
+            distanceToDest = minDistance // Start with distance to closest point
+            for (i in closestIndex until state.routePath.size - 1) {
+                distanceToDest += calculateDistance(
+                    state.routePath[i].latitude, state.routePath[i].longitude,
+                    state.routePath[i+1].latitude, state.routePath[i+1].longitude
+                )
+            }
         }
 
         // Check if we passed the instruction (e.g., distance < 20 meters)
