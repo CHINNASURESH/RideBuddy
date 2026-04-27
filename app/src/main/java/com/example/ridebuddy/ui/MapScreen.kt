@@ -83,6 +83,7 @@ fun MapsforgeMap(
     mapManager: MapsforgeMapManager? = null,
     mapMode: MapMode = MapMode.MY_RIDE,
     friends: List<com.example.ridebuddy.ui.UserUiModel> = emptyList(),
+    extractedMapFile: java.io.File? = null,
     onMapReady: (MapView) -> Unit
 ) {
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
@@ -104,15 +105,40 @@ fun MapsforgeMap(
             }
         },
         update = { mapView ->
+            if (extractedMapFile != null && isFirstLocation) {
+                try {
+                    val mapDataStore = org.mapsforge.map.reader.MapFile(extractedMapFile)
+                    val tileCache = org.mapsforge.map.android.util.AndroidUtil.createTileCache(
+                        mapView.context, "mapcache",
+                        mapView.model.displayModel.tileSize, 1f,
+                        mapView.model.frameBufferModel.overdrawFactor
+                    )
+
+                    val tileRendererLayer = org.mapsforge.map.layer.renderer.TileRendererLayer(
+                        tileCache,
+                        mapDataStore,
+                        mapView.model.mapViewPosition,
+                        AndroidGraphicFactory.INSTANCE
+                    )
+
+                    tileRendererLayer.setXmlRenderTheme(org.mapsforge.map.rendertheme.InternalRenderTheme.OSMARENDER)
+                    mapView.layerManager.layers.add(tileRendererLayer)
+
+                    // Center on India
+                    mapView.model.mapViewPosition.center = LatLong(20.5937, 78.9629)
+                    mapView.model.mapViewPosition.zoomLevel = 6.toByte()
+
+                    isFirstLocation = false
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
             if (currentLocation != null && mapManager != null) {
                 val latLong = LatLong(currentLocation.latitude, currentLocation.longitude)
                 mapManager.updateUserLocation(latLong)
 
-                if (isFirstLocation) {
-                    mapManager.setCenter(latLong)
-                    mapManager.setZoomLevel(15.toByte())
-                    isFirstLocation = false
-                } else {
+                if (!isFirstLocation && extractedMapFile == null) { // Temporarily disable centering to user location so we can verify the India map renders
                     when (mapMode) {
                         MapMode.MY_RIDE -> {
                             mapManager.setCenter(latLong)
@@ -145,6 +171,18 @@ fun MapsforgeMap(
             }
         }
     )
+}
+
+suspend fun extractMapAsset(context: Context, fileName: String): java.io.File = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    val destFile = java.io.File(context.filesDir, fileName)
+    if (!destFile.exists()) {
+        context.assets.open(fileName).use { input ->
+            java.io.FileOutputStream(destFile).use { output ->
+                input.copyTo(output)
+            }
+        }
+    }
+    destFile
 }
 
 fun findActivity(context: android.content.Context): android.app.Activity? {
@@ -388,13 +426,26 @@ fun MapScreen(
         }
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
+        var isMapLoading by remember { mutableStateOf(true) }
+        var extractedMapFile by remember { mutableStateOf<java.io.File?>(null) }
+
+        LaunchedEffect(Unit) {
+            val file = extractMapAsset(context, "India-southern-zone.map")
+            extractedMapFile = file
+            isMapLoading = false
+        }
+
         val mapExtractionReady by offlineStorageManager?.mapExtractionReady?.collectAsState(initial = false) ?: remember { mutableStateOf(false) }
 
         LaunchedEffect(mapExtractionReady, mapManager) {
             if (mapExtractionReady && mapManager != null && offlineStorageManager != null) {
                 val mapFile = offlineStorageManager.getOfflineFile("germany.map")
-                mapManager?.loadMapFile(mapFile)
+                // mapManager?.loadMapFile(mapFile) // Temporarily override with custom logic below
             }
+        }
+
+        if (isMapLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
         MapsforgeMap(
@@ -403,6 +454,7 @@ fun MapScreen(
             mapManager = mapManager,
             mapMode = mapMode,
             friends = friends,
+            extractedMapFile = extractedMapFile,
             onMapReady = { mapView ->
                 val newMapManager = MapsforgeMapManager(mapView.context, mapView)
                 mapManager = newMapManager
