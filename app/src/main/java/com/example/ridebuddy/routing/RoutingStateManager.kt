@@ -62,7 +62,8 @@ class RoutingStateManager(
             expectedArrivalTime = expectedArrival,
             destinationSunsetTime = sunsetTime,
             totalDistance = result.totalDistance,
-            totalSeconds = result.totalSeconds
+            totalSeconds = result.totalSeconds,
+            isOffRoadFallback = result.isOffRoadFallback
         )
     }
 

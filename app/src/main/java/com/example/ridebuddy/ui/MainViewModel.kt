@@ -311,16 +311,32 @@ class MainViewModel @Inject constructor(
     }
 
     fun calculatePreRideRouteStraightLine(origin: LatLong, destination: LatLong) {
-        val distance = com.example.ridebuddy.util.LocationUtil.calculateDistance(origin, destination)
-        // Dummy ETA for straight line: ~50km/h average -> distance / 50000.0 * 3600 seconds
-        val etaSeconds = (distance / 50000.0 * 3600).toInt()
-        val result = com.example.ridebuddy.routing.RoutingResult(
-            path = listOf(origin, destination),
-            instructions = emptyList(),
-            totalSeconds = etaSeconds,
-            totalDistance = distance
-        )
-        _preRideRouteResult.value = result
+        viewModelScope.launch {
+            val waypoints = listOf(origin, destination)
+            var result: com.example.ridebuddy.routing.RoutingResult? = null
+            try {
+                result = routingEngine.calculateRoute(waypoints, _currentVehicleProfile.value)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            if (result != null && result.path.isNotEmpty()) {
+                _preRideRouteResult.value = result
+            } else {
+                // Fallback to straight line
+                val distance = com.example.ridebuddy.util.LocationUtil.calculateDistance(origin, destination)
+                // Dummy ETA for straight line: ~50km/h average -> distance / 50000.0 * 3600 seconds
+                val etaSeconds = (distance / 50000.0 * 3600).toInt()
+                val fallbackResult = com.example.ridebuddy.routing.RoutingResult(
+                    path = listOf(origin, destination),
+                    instructions = emptyList(),
+                    totalSeconds = etaSeconds,
+                    totalDistance = distance,
+                    isOffRoadFallback = true
+                )
+                _preRideRouteResult.value = fallbackResult
+            }
+        }
     }
 
     fun clearPreRideRoute() {
@@ -337,8 +353,31 @@ class MainViewModel @Inject constructor(
 
     fun calculateRoute(waypoints: List<org.mapsforge.core.model.LatLong>) {
         viewModelScope.launch {
-            val result = routingEngine.calculateRoute(waypoints, _currentVehicleProfile.value)
-            routingStateManager.startRouting(result)
+            var result: com.example.ridebuddy.routing.RoutingResult? = null
+            try {
+                result = routingEngine.calculateRoute(waypoints, _currentVehicleProfile.value)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            if (result != null && result.path.isNotEmpty()) {
+                routingStateManager.startRouting(result)
+            } else {
+                // Fallback to straight line for multi-point route if calculation fails
+                var distance = 0
+                for (i in 0 until waypoints.size - 1) {
+                    distance += com.example.ridebuddy.util.LocationUtil.calculateDistance(waypoints[i], waypoints[i+1]).toInt()
+                }
+                val etaSeconds = (distance / 50000.0 * 3600).toInt()
+                val fallbackResult = com.example.ridebuddy.routing.RoutingResult(
+                    path = waypoints,
+                    instructions = emptyList(),
+                    totalSeconds = etaSeconds,
+                    totalDistance = distance,
+                    isOffRoadFallback = true
+                )
+                routingStateManager.startRouting(fallbackResult)
+            }
         }
     }
 

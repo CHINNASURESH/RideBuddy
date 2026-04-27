@@ -154,7 +154,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
         }
     }
 
-    fun drawRoute(routePoints: List<LatLong>, color: Int = android.graphics.Color.BLUE, strokeWidth: Float = 10f) {
+    fun drawRoute(routePoints: List<LatLong>, color: Int = android.graphics.Color.BLUE, strokeWidth: Float = 10f, isDashed: Boolean = false) {
         // Remove existing route if any
         routePolyline?.let {
             mapView.layerManager.layers.remove(it)
@@ -164,6 +164,9 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
             setColor(color)
             setStrokeWidth(strokeWidth)
             setStyle(Style.STROKE)
+            if (isDashed) {
+                setDashPathEffect(floatArrayOf(20f, 20f))
+            }
         }
 
         val polyline = Polyline(paint, AndroidGraphicFactory.INSTANCE)
