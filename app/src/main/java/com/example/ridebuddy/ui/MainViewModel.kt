@@ -310,6 +310,19 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun calculatePreRideRouteStraightLine(origin: LatLong, destination: LatLong) {
+        val distance = com.example.ridebuddy.util.LocationUtil.calculateDistance(origin, destination)
+        // Dummy ETA for straight line: ~50km/h average -> distance / 50000.0 * 3600 seconds
+        val etaSeconds = (distance / 50000.0 * 3600).toInt()
+        val result = com.example.ridebuddy.routing.RoutingResult(
+            path = listOf(origin, destination),
+            instructions = emptyList(),
+            totalSeconds = etaSeconds,
+            totalDistance = distance
+        )
+        _preRideRouteResult.value = result
+    }
+
     fun clearPreRideRoute() {
         _preRideRouteResult.value = null
     }

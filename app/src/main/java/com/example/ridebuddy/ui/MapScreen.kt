@@ -550,13 +550,10 @@ fun MapScreen(
                                     if (searchQuery.isNotBlank() && userLocation != null) {
                                         isSearching = true
                                         coroutineScope.launch {
-                                            val geocoder = com.example.ridebuddy.search.GeocoderLocationSearch(context)
-                                            val results = geocoder.search(searchQuery)
-                                            if (results.isNotEmpty()) {
-                                                val dest = results.first()
-                                                val destLatLong = LatLong(dest.latitude, dest.longitude)
+                                            val destLatLong = com.example.ridebuddy.util.LocationUtil.geocode(context, searchQuery)
+                                            if (destLatLong != null) {
                                                 val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
-                                                viewModel.calculatePreRideRoute(listOf(originLatLong, destLatLong))
+                                                viewModel.calculatePreRideRouteStraightLine(originLatLong, destLatLong)
                                             }
                                             isSearching = false
                                         }
@@ -589,7 +586,7 @@ fun MapScreen(
                     if (userLocation != null && preRideResult!!.path.isNotEmpty()) {
                         val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
                         val destLatLong = preRideResult!!.path.last()
-                        viewModel.calculatePreRideRoute(listOf(originLatLong, destLatLong))
+                        viewModel.calculatePreRideRouteStraightLine(originLatLong, destLatLong)
                     }
                 },
                 onStartRide = {
