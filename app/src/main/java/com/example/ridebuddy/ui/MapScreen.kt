@@ -370,7 +370,7 @@ fun MapScreen(
 
     LaunchedEffect(routingState.routePath) {
         if (routingState.routePath.isNotEmpty()) {
-            mapManager?.drawRoute(routingState.routePath)
+            mapManager?.drawRoute(routingState.routePath, isDashed = routingState.isOffRoadFallback)
         }
     }
 
@@ -574,6 +574,46 @@ fun MapScreen(
 
         val preRideResult by viewModel.preRideRouteResult.collectAsState()
         val currentProfile by viewModel.currentVehicleProfile.collectAsState()
+
+        LaunchedEffect(preRideResult) {
+            if (preRideResult != null) {
+                mapManager?.drawRoute(preRideResult!!.path, isDashed = preRideResult!!.isOffRoadFallback)
+
+                // Adjust view to fit the route
+                if (preRideResult!!.path.size >= 2) {
+                    var minLat = preRideResult!!.path[0].latitude
+                    var maxLat = preRideResult!!.path[0].latitude
+                    var minLon = preRideResult!!.path[0].longitude
+                    var maxLon = preRideResult!!.path[0].longitude
+
+                    for (point in preRideResult!!.path) {
+                        if (point.latitude < minLat) minLat = point.latitude
+                        if (point.latitude > maxLat) maxLat = point.latitude
+                        if (point.longitude < minLon) minLon = point.longitude
+                        if (point.longitude > maxLon) maxLon = point.longitude
+                    }
+
+                    val margin = maxOf((maxLat - minLat) * 0.1, (maxLon - minLon) * 0.1, 0.001)
+                    val boundingBox = org.mapsforge.core.model.BoundingBox(
+                        minLat - margin, minLon - margin, maxLat + margin, maxLon + margin
+                    )
+
+                    val maxDiff = maxOf(maxLat - minLat, maxLon - minLon)
+                    var zoom: Byte = 16
+                    if (maxDiff > 0) {
+                        val scale = 360.0 / maxDiff
+                        zoom = (Math.log(scale) / Math.log(2.0)).toInt().toByte()
+                    }
+                    if (zoom < 5) zoom = 5
+                    if (zoom > 20) zoom = 20
+
+                    val newPosition = org.mapsforge.core.model.MapPosition(boundingBox.centerPoint, zoom)
+                    mapManager?.setMapPosition(newPosition)
+                }
+            } else {
+                mapManager?.clearRouteAndWaypoints()
+            }
+        }
 
         if (preRideResult != null) {
             PreRideSetupBottomSheet(
