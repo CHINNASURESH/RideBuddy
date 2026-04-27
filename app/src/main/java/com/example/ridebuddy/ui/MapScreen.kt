@@ -97,7 +97,7 @@ fun MapsforgeMap(
     }
 
     AndroidView(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         factory = { ctx ->
             MapView(ctx).apply {
                 mapViewInstance = this
@@ -138,7 +138,7 @@ fun MapsforgeMap(
                 val latLong = LatLong(currentLocation.latitude, currentLocation.longitude)
                 mapManager.updateUserLocation(latLong)
 
-                if (!isFirstLocation && extractedMapFile == null) { // Temporarily disable centering to user location so we can verify the India map renders
+                if (!isFirstLocation) {
                     when (mapMode) {
                         MapMode.MY_RIDE -> {
                             mapManager.setCenter(latLong)
