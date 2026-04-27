@@ -6,8 +6,7 @@ brouter-codec/build/
 brouter-util/build/
 brouter-mapaccess/build/
 brouter-expressions/build/
-build/
-.gradle/
 # Google Services config
 app/google-services.json
 google-services.json
+*.map
