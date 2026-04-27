@@ -84,6 +84,8 @@ fun MapsforgeMap(
     mapMode: MapMode = MapMode.MY_RIDE,
     friends: List<com.example.ridebuddy.ui.UserUiModel> = emptyList(),
     extractedMapFile: java.io.File? = null,
+    isCameraLockedToGps: Boolean = true,
+    onMapInteraction: () -> Unit = {},
     onMapReady: (MapView) -> Unit
 ) {
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
@@ -101,6 +103,12 @@ fun MapsforgeMap(
         factory = { ctx ->
             MapView(ctx).apply {
                 mapViewInstance = this
+                setOnTouchListener { _, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_DOWN || event.action == android.view.MotionEvent.ACTION_MOVE) {
+                        onMapInteraction()
+                    }
+                    false
+                }
                 onMapReady(this)
             }
         },
@@ -138,7 +146,7 @@ fun MapsforgeMap(
                 val latLong = LatLong(currentLocation.latitude, currentLocation.longitude)
                 mapManager.updateUserLocation(latLong)
 
-                if (!isFirstLocation) {
+                if (!isFirstLocation && isCameraLockedToGps) {
                     when (mapMode) {
                         MapMode.MY_RIDE -> {
                             mapManager.setCenter(latLong)
@@ -218,6 +226,8 @@ fun MapScreen(
 
     val locationTracker = remember { LocationTracker(context) }
     val userLocation by locationTracker.location.collectAsState()
+
+    var isCameraLockedToGps by remember { mutableStateOf(true) }
 
 
     // Announce route start
@@ -332,6 +342,12 @@ fun MapScreen(
     // Request permissions on launch
     LaunchedEffect(Unit) {
         permissionsLauncher.launch(permissions.toTypedArray())
+    }
+
+    LaunchedEffect(userLocation) {
+        userLocation?.let {
+            viewModel.routingStateManager.updateLocation(it)
+        }
     }
 
     // Combine friends list and heading to correctly update the overlay without overwriting state
@@ -455,6 +471,8 @@ fun MapScreen(
             mapMode = mapMode,
             friends = friends,
             extractedMapFile = extractedMapFile,
+            isCameraLockedToGps = isCameraLockedToGps,
+            onMapInteraction = { isCameraLockedToGps = false },
             onMapReady = { mapView ->
                 val newMapManager = MapsforgeMapManager(mapView.context, mapView)
                 mapManager = newMapManager
@@ -487,6 +505,23 @@ fun MapScreen(
             modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
         ) {
             Icon(Icons.Filled.Menu, contentDescription = "Menu")
+        }
+
+        if (!isCameraLockedToGps) {
+            FloatingActionButton(
+                onClick = {
+                    isCameraLockedToGps = true
+                    userLocation?.let { loc ->
+                        mapManager?.setCenter(LatLong(loc.latitude, loc.longitude))
+                        mapManager?.setZoomLevel(16.toByte())
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = if (routingState.isRoutingActive || DEBUG_ASO_MODE) 120.dp else 16.dp) // Offset above dashboard if active
+            ) {
+                Icon(Icons.Filled.Place, contentDescription = "Recenter Map")
+            }
         }
 
         // Top Container for Tabs & Search
@@ -577,6 +612,7 @@ fun MapScreen(
 
         LaunchedEffect(preRideResult) {
             if (preRideResult != null) {
+                isCameraLockedToGps = false
                 mapManager?.drawRoute(preRideResult!!.path, isDashed = preRideResult!!.isOffRoadFallback)
 
                 // Adjust view to fit the route
@@ -630,9 +666,11 @@ fun MapScreen(
                     }
                 },
                 onStartRide = {
+                    isCameraLockedToGps = true
                     viewModel.startPreRideNavigation()
                 },
                 onDismiss = {
+                    isCameraLockedToGps = true
                     viewModel.clearPreRideRoute()
                 }
             )
