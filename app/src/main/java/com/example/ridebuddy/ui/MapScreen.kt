@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
@@ -218,6 +220,7 @@ fun MapScreen(
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var isControlsExpanded by remember { mutableStateOf(false) }
     val isOnline by viewModel.isOnline.collectAsState()
 
     val isPro by viewModel.isPro.collectAsState()
@@ -793,9 +796,23 @@ fun MapScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
+                    IconButton(onClick = { isControlsExpanded = !isControlsExpanded }) {
+                        Icon(
+                            imageVector = if (isControlsExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                            contentDescription = if (isControlsExpanded) "Collapse" else "Expand"
+                        )
+                    }
+                }
 
-                if (mapMode == MapMode.MY_GROUP) {
+                androidx.compose.animation.AnimatedVisibility(visible = isControlsExpanded) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        if (mapMode == MapMode.MY_GROUP) {
                     if (!allPermissionsGranted) {
                         Text(
                             "Permissions required to share location.",
@@ -915,6 +932,8 @@ fun MapScreen(
                         ) {
                             Text("Share Last Ride GPX")
                         }
+                    }
+                }
                     }
                 }
             }
