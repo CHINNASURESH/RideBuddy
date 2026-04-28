@@ -7,6 +7,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreRideSetupBottomSheet(
@@ -15,10 +19,15 @@ fun PreRideSetupBottomSheet(
     selectedVehicle: String,
     onVehicleSelected: (String) -> Unit,
     onStartRide: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 8.dp
     ) {
         Column(
             modifier = Modifier
@@ -26,11 +35,20 @@ fun PreRideSetupBottomSheet(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Route Setup",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Route Setup",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Clear, contentDescription = "Close")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Vehicle Selector
             Text(

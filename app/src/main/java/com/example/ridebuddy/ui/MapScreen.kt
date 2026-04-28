@@ -451,6 +451,9 @@ fun MapScreen(
             isMapLoading = false
         }
 
+        val preRideResult by viewModel.preRideRouteResult.collectAsState()
+        val currentProfile by viewModel.currentVehicleProfile.collectAsState()
+
         val mapExtractionReady by offlineStorageManager?.mapExtractionReady?.collectAsState(initial = false) ?: remember { mutableStateOf(false) }
 
         LaunchedEffect(mapExtractionReady, mapManager) {
@@ -508,6 +511,14 @@ fun MapScreen(
         }
 
         if (!isCameraLockedToGps) {
+            val bottomPadding = if (routingState.isRoutingActive || DEBUG_ASO_MODE) {
+                120.dp
+            } else if (preRideResult != null) {
+                300.dp // Offset above PreRideSetupBottomSheet
+            } else {
+                16.dp
+            }
+
             FloatingActionButton(
                 onClick = {
                     isCameraLockedToGps = true
@@ -518,7 +529,7 @@ fun MapScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = if (routingState.isRoutingActive || DEBUG_ASO_MODE) 120.dp else 16.dp) // Offset above dashboard if active
+                    .padding(end = 16.dp, bottom = bottomPadding)
             ) {
                 Icon(Icons.Filled.Place, contentDescription = "Recenter Map")
             }
@@ -607,9 +618,6 @@ fun MapScreen(
             }
         }
 
-        val preRideResult by viewModel.preRideRouteResult.collectAsState()
-        val currentProfile by viewModel.currentVehicleProfile.collectAsState()
-
         LaunchedEffect(preRideResult) {
             if (preRideResult != null) {
                 isCameraLockedToGps = false
@@ -653,6 +661,7 @@ fun MapScreen(
 
         if (preRideResult != null) {
             PreRideSetupBottomSheet(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                 distanceMeters = preRideResult!!.totalDistance,
                 etaSeconds = preRideResult!!.totalSeconds,
                 selectedVehicle = currentProfile,

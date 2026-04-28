@@ -57,7 +57,7 @@ class RoutingStateManager(
             } else {
                 0.0
             },
-            distanceToDestination = 0.0,
+            distanceToDestination = result.totalDistance.toDouble(),
             isRoutingActive = true,
             expectedArrivalTime = expectedArrival,
             destinationSunsetTime = sunsetTime,
@@ -73,16 +73,7 @@ class RoutingStateManager(
 
     fun updateLocation(location: Location) {
         val state = _routingState.value
-        if (!state.isRoutingActive || state.turnInstructions.isEmpty()) return
-
-        val currentInstructionIndex = state.currentInstructionIndex
-        if (currentInstructionIndex >= state.turnInstructions.size) return
-
-        val nextInstruction = state.turnInstructions[currentInstructionIndex]
-        val distanceToNext = calculateDistance(
-            location.latitude, location.longitude,
-            nextInstruction.coordinate.latitude, nextInstruction.coordinate.longitude
-        )
+        if (!state.isRoutingActive) return
 
         var distanceToDest = 0.0
         if (state.routePath.isNotEmpty()) {
@@ -107,6 +98,20 @@ class RoutingStateManager(
                 )
             }
         }
+
+        if (state.turnInstructions.isEmpty() || state.currentInstructionIndex >= state.turnInstructions.size) {
+            _routingState.update {
+                it.copy(distanceToDestination = distanceToDest)
+            }
+            return
+        }
+
+        val currentInstructionIndex = state.currentInstructionIndex
+        val nextInstruction = state.turnInstructions[currentInstructionIndex]
+        val distanceToNext = calculateDistance(
+            location.latitude, location.longitude,
+            nextInstruction.coordinate.latitude, nextInstruction.coordinate.longitude
+        )
 
         // Check if we passed the instruction (e.g., distance < 20 meters)
         if (distanceToNext < 20.0) {
