@@ -220,7 +220,6 @@ fun MapScreen(
 
     val routingState by viewModel.routingStateManager.routingState.collectAsState()
     var showFeedbackDialog by remember { mutableStateOf(false) }
-    var isControlsExpanded by remember { mutableStateOf(false) }
     val isOnline by viewModel.isOnline.collectAsState()
 
     val isPro by viewModel.isPro.collectAsState()
@@ -426,8 +425,13 @@ fun MapScreen(
         return
     }
 
+    var searchResultLocation by remember { mutableStateOf<LatLong?>(null) }
+    var searchResultName by remember { mutableStateOf<String?>(null) }
+    var autoStartNavigation by remember { mutableStateOf(false) }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             ModalDrawerSheet {
                 Spacer(Modifier.height(16.dp))
@@ -441,6 +445,138 @@ fun MapScreen(
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                Text(
+                    text = "Ride Buddy Controls",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp)
+                )
+
+                Column(modifier = Modifier.padding(horizontal = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    if (mapMode == MapMode.MY_GROUP) {
+                        if (!allPermissionsGranted) {
+                            Text(
+                                "Permissions required to share location.",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Button(
+                                onClick = { permissionsLauncher.launch(permissions.toTypedArray()) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Grant Permissions")
+                            }
+                        } else {
+                            if (isSharing) {
+                                Button(
+                                    onClick = {
+                                        viewModel.stopSharing()
+                                        isSharing = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Stop Sharing")
+                                }
+
+                                Text("Update Frequency:", style = MaterialTheme.typography.labelLarge)
+                                FrequencySelector(
+                                    selected = selectedFrequency,
+                                    onSelect = {
+                                        selectedFrequency = it
+                                        viewModel.updateFrequency(it)
+                                    }
+                                )
+                            } else {
+                                Text("Start Sharing Location:", style = MaterialTheme.typography.labelLarge)
+
+                                Text("Duration:", style = MaterialTheme.typography.bodyMedium)
+                                DurationSelector(
+                                    selected = selectedDuration,
+                                    onSelect = { selectedDuration = it }
+                                )
+
+                                Text("Update Frequency:", style = MaterialTheme.typography.bodyMedium)
+                                FrequencySelector(
+                                    selected = selectedFrequency,
+                                    onSelect = { selectedFrequency = it }
+                                )
+
+                                Button(
+                                    onClick = {
+                                        viewModel.startSharing(selectedDuration, selectedFrequency)
+                                        isSharing = true
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Start Sharing")
+                                }
+                            }
+                        }
+                    } else if (mapMode == MapMode.MY_RIDE) {
+                        Button(
+                            onClick = { gpxPickerLauncher.launch("*/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Import GPX Route")
+                        }
+
+                        if (!isPro) {
+                            Button(
+                                onClick = {
+                                    viewModel.logProUpgradeView()
+                                    showProDialog.value = true
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Unlock Ridebuddy Pro")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text("Record Ride:", style = MaterialTheme.typography.labelLarge)
+                        if (isRecording) {
+                            Button(
+                                onClick = {
+                                    viewModel.toggleRecording(context, false, locationTracker.location)
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Stop Recording")
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    viewModel.toggleRecording(context, true, locationTracker.location)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Start Recording")
+                            }
+                            Button(
+                                onClick = {
+                                    viewModel.exportLatestRide(context) { success ->
+                                        // Normally we would show a toast here, but simple implementation is fine
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Export Last Ride GPX")
+                            }
+
+                            Button(
+                                onClick = {
+                                    viewModel.shareLatestRide(context)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Share Last Ride GPX")
+                            }
+                        }
+                    }
+                }
             }
         }
     ) {
@@ -601,8 +737,13 @@ fun MapScreen(
                                         coroutineScope.launch {
                                             val destLatLong = com.example.ridebuddy.util.LocationUtil.geocode(context, searchQuery)
                                             if (destLatLong != null) {
-                                                val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
-                                                viewModel.calculatePreRideRouteStraightLine(originLatLong, destLatLong)
+                                                searchResultLocation = destLatLong
+                                                searchResultName = searchQuery
+
+                                                // Center map on searched location
+                                                isCameraLockedToGps = false
+                                                mapManager?.setCenter(destLatLong)
+                                                mapManager?.setZoomLevel(15.toByte())
                                             }
                                             isSearching = false
                                         }
@@ -686,6 +827,61 @@ fun MapScreen(
                     viewModel.clearPreRideRoute()
                 }
             )
+        }
+
+        LaunchedEffect(preRideResult, autoStartNavigation) {
+            if (preRideResult != null && autoStartNavigation) {
+                isCameraLockedToGps = true
+                viewModel.startPreRideNavigation()
+                autoStartNavigation = false
+            }
+        }
+
+        if (searchResultLocation != null && preRideResult == null && !routingState.isRoutingActive) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 8.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = searchResultName ?: "Selected Location", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = "${String.format("%.4f", searchResultLocation!!.latitude)}, ${String.format("%.4f", searchResultLocation!!.longitude)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Button(onClick = {
+                            if (userLocation != null) {
+                                val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
+                                viewModel.calculatePreRideRouteStraightLine(originLatLong, searchResultLocation!!)
+                            }
+                            searchResultLocation = null
+                        }) {
+                            Text("Route")
+                        }
+                        Button(onClick = {
+                            if (userLocation != null) {
+                                autoStartNavigation = true
+                                val originLatLong = LatLong(userLocation!!.latitude, userLocation!!.longitude)
+                                viewModel.calculatePreRideRouteStraightLine(originLatLong, searchResultLocation!!)
+                            }
+                            searchResultLocation = null
+                        }) {
+                            Text("Start")
+                        }
+                        Button(onClick = {
+                            android.widget.Toast.makeText(context, "Location saved as favourite", android.widget.Toast.LENGTH_SHORT).show()
+                            searchResultLocation = null
+                        }) {
+                            Text("Save")
+                        }
+                    }
+                }
+            }
         }
 
         // Network Status Overlay
@@ -782,162 +978,6 @@ fun MapScreen(
                     .padding(bottom = 16.dp),
                 isSolarTelemetryEnabled = isSolarTelemetryEnabled
             )
-        } else if (!DEBUG_ASO_MODE) {
-            // Control Panel
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                tonalElevation = 8.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "Ride Buddy Controls", style = MaterialTheme.typography.titleLarge)
-                    IconButton(onClick = { isControlsExpanded = !isControlsExpanded }) {
-                        Icon(
-                            imageVector = if (isControlsExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                            contentDescription = if (isControlsExpanded) "Collapse" else "Expand"
-                        )
-                    }
-                }
-
-                androidx.compose.animation.AnimatedVisibility(visible = isControlsExpanded) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        if (mapMode == MapMode.MY_GROUP) {
-                    if (!allPermissionsGranted) {
-                        Text(
-                            "Permissions required to share location.",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(
-                            onClick = { permissionsLauncher.launch(permissions.toTypedArray()) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Grant Permissions")
-                        }
-                    } else {
-                        if (isSharing) {
-                            Button(
-                                onClick = {
-                                    viewModel.stopSharing()
-                                    isSharing = false
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Stop Sharing")
-                            }
-
-                            Text("Update Frequency:", style = MaterialTheme.typography.labelLarge)
-                            FrequencySelector(
-                                selected = selectedFrequency,
-                                onSelect = {
-                                    selectedFrequency = it
-                                    viewModel.updateFrequency(it)
-                                }
-                            )
-                        } else {
-                            Text("Start Sharing Location:", style = MaterialTheme.typography.labelLarge)
-
-                            Text("Duration:", style = MaterialTheme.typography.bodyMedium)
-                            DurationSelector(
-                                selected = selectedDuration,
-                                onSelect = { selectedDuration = it }
-                            )
-
-                            Text("Update Frequency:", style = MaterialTheme.typography.bodyMedium)
-                            FrequencySelector(
-                                selected = selectedFrequency,
-                                onSelect = { selectedFrequency = it }
-                            )
-
-                            Button(
-                                onClick = {
-                                    viewModel.startSharing(selectedDuration, selectedFrequency)
-                                    isSharing = true
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Start Sharing")
-                            }
-                        }
-                    }
-                } else if (mapMode == MapMode.MY_RIDE) {
-                    Button(
-                        onClick = { gpxPickerLauncher.launch("*/*") },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Import GPX Route")
-                    }
-
-                    if (!isPro) {
-                        Button(
-                            onClick = {
-                                viewModel.logProUpgradeView()
-                                showProDialog.value = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Unlock Ridebuddy Pro")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("Record Ride:", style = MaterialTheme.typography.labelLarge)
-                    if (isRecording) {
-                        Button(
-                            onClick = {
-                                viewModel.toggleRecording(context, false, locationTracker.location)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Stop Recording")
-                        }
-                    } else {
-                        Button(
-                            onClick = {
-                                viewModel.toggleRecording(context, true, locationTracker.location)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Start Recording")
-                        }
-                        Button(
-                            onClick = {
-                                viewModel.exportLatestRide(context) { success ->
-                                    // Normally we would show a toast here, but simple implementation is fine
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Export Last Ride GPX")
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.shareLatestRide(context)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Share Last Ride GPX")
-                        }
-                    }
-                }
-                    }
-                }
-            }
-            }
         }
 
         // Quick-Action UI
