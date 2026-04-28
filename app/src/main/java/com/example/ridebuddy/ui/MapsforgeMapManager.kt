@@ -165,7 +165,7 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
             setStrokeWidth(strokeWidth)
             setStyle(Style.STROKE)
             if (isDashed) {
-                setDashPathEffect(floatArrayOf(20f, 20f))
+                setDashPathEffect(floatArrayOf(strokeWidth, strokeWidth * 2))
             }
         }
 
