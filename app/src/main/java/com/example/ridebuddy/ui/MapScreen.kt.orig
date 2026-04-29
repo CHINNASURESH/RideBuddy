@@ -770,10 +770,6 @@ fun MapScreen(
         LaunchedEffect(preRideResult) {
             if (preRideResult != null) {
                 isCameraLockedToGps = false
-                mapManager?.clearRouteAndWaypoints()
-                for (altPath in preRideResult!!.alternativePaths) {
-                    mapManager?.drawImportedRoute(altPath, color = android.graphics.Color.GRAY, strokeWidth = 8f)
-                }
                 mapManager?.drawRoute(preRideResult!!.path, isDashed = preRideResult!!.isOffRoadFallback)
 
                 // Adjust view to fit the route

@@ -310,7 +310,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun calculatePreRideRouteStraightLine(origin: LatLong, destination: LatLong) {
+    fun calculatePreRideRoute(origin: LatLong, destination: LatLong) {
         viewModelScope.launch {
             val waypoints = listOf(origin, destination)
             var result: com.example.ridebuddy.routing.RoutingResult? = null
