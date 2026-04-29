@@ -2,7 +2,7 @@
 <rendertheme xmlns="http://mapsforge.org/rendertheme" version="1" map-background="#E6E2DA">
     <rule e="way" k="highway" v="motorway|trunk|primary|primary_link|trunk_link|motorway_link">
         <!-- Main Roads Outline (White with dark grey outline, or Yellow-Gold per spec) -->
-        <line stroke="#E56038" stroke-width="4" />
+        <line stroke="#C8A032" stroke-width="4" />
         <line stroke="#FFD24D" stroke-width="2" />
     </rule>
     <rule e="way" k="highway" v="secondary|tertiary|unclassified|residential|secondary_link|tertiary_link">
