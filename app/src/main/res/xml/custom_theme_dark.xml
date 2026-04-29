@@ -3,7 +3,7 @@
     <rule e="way" k="highway" v="motorway|trunk|primary|primary_link|trunk_link|motorway_link">
         <!-- Dark Basemaps (Night Mode) -->
         <!-- Highways: Dark Grey with neon yellow or orange glow -->
-        <line stroke="#FFA500" stroke-width="4" />
+        <line stroke="#FFFF00" stroke-width="4" />
         <line stroke="#383838" stroke-width="2" />
     </rule>
     <rule e="way" k="highway" v="secondary|tertiary|unclassified|residential|secondary_link|tertiary_link">
