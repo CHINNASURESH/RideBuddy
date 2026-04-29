@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rendertheme xmlns="http://mapsforge.org/rendertheme" version="1" map-background="#E6E2DA">
+    <rule e="way" k="highway" v="motorway|trunk|primary|primary_link|trunk_link|motorway_link">
+        <!-- Main Roads Outline (White with dark grey outline, or Yellow-Gold per spec) -->
+        <line stroke="#E56038" stroke-width="4" />
+        <line stroke="#FFD24D" stroke-width="2" />
+    </rule>
+    <rule e="way" k="highway" v="secondary|tertiary|unclassified|residential|secondary_link|tertiary_link">
+        <line stroke="#808080" stroke-width="3.5" />
+        <line stroke="#FFFFFF" stroke-width="2.5" />
+    </rule>
+    <rule e="way" k="highway" v="service|track|path|footway|cycleway|pedestrian|steps|living_street">
+        <line stroke="#D1D1D1" stroke-width="1.5" />
+    </rule>
+</rendertheme>

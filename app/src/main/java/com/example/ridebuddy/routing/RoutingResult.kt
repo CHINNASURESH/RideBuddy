@@ -7,5 +7,6 @@ data class RoutingResult(
     val instructions: List<TurnInstruction> = emptyList(),
     val totalSeconds: Int = 0,
     val totalDistance: Int = 0,
-    val isOffRoadFallback: Boolean = false
+    val isOffRoadFallback: Boolean = false,
+    val alternativePaths: List<List<LatLong>> = emptyList()
 )

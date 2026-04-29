@@ -229,10 +229,6 @@ class MapsforgeMapManager(private val context: Context, private val mapView: Map
             mapView.layerManager.layers.remove(it)
             routePolyline = null
         }
-        importedRoutePolyline?.let {
-            mapView.layerManager.layers.remove(it)
-            importedRoutePolyline = null
-        }
         for (marker in waypointMarkers) {
             mapView.layerManager.layers.remove(marker)
         }
